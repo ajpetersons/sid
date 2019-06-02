@@ -1,10 +1,9 @@
 class Fingerprint(object):
     d = 257 # Hashing constant
-    # q = (1 << 64) - 59 # A large prime, hash taken modulo this
-    q = 100
+    q = (1 << 64) - 59 # A large prime, hash taken modulo this
 
 
-    def __init__(self, k, w, source, robust=False):
+    def __init__(self, k, w, robust=False):
         """Fingerprint class constructor. The class processes one input source 
             and generates fingerprints using Winnowing algorithm.
         
@@ -13,31 +12,31 @@ class Fingerprint(object):
         :param w: Window size where each window of lentgth w will contain at 
             least one fingerprint
         :type w: int
-        :param source: Input text to fingerprint
-        :type source: str
         :param robust: Flag to choose if robust winnowing should be used, 
             defaults to False
         :type robust: bool, optional
         """
         self.k = k
         self.w = w
-        self.source = source
         self.robust = robust
 
 
-    def generate(self):
+    def generate(self, source):
         """Method initiates fingerprint generation. Fingerprints are coupled 
             together with their relative postition to the start of string to 
             locate where the match occurred. Return type is list of dictionaries 
             where two keys exist - 'fingerprint' and 'position'.
         
+        :param source: Input text to fingerprint
+        :type source: str
         :return: Generated fingerprints for the source text
         :rtype: list of dict
         """
         # generate fingerprints from source
         self.fingerprints = []
+        self.source = source
         self.source_pos = 0 # Start of current k-gram in source
-        self.top_d = (self.d ** (self.k - 1)) % self.q
+        self.top_d = (self.d ** self.k) % self.q
 
         self.winnowing()
 
