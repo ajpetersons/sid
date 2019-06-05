@@ -25,7 +25,7 @@ class Fingerprint(object):
         """Method initiates fingerprint generation. Fingerprints are coupled 
             together with their relative postition to the start of string to 
             locate where the match occurred. Return type is list of dictionaries 
-            where two keys exist - 'fingerprint' and 'position'.
+            where two keys exist - 'fingerprint' and 'offset'.
         
         :param source: Input text to fingerprint
         :type source: str
@@ -43,19 +43,19 @@ class Fingerprint(object):
         return self.fingerprints
 
 
-    def record(self, fingerprint, position):
-        """Method records the current fingerprint along with it's position in a 
+    def record(self, fingerprint, offset):
+        """Method records the current fingerprint along with it's offset in a 
         global buffer
         
         :param fingerprint: Hash value of the current fingerprint
         :type fingerprint: int
-        :param position: Position of the k-gram where fingerprint starts
-        :type position: int
+        :param offset: Position of the k-gram where fingerprint starts
+        :type offset: int
         """
 
         self.fingerprints.append({
             'fingerprint': fingerprint,
-            'position': position,
+            'offset': offset,
         })
 
 
