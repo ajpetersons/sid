@@ -179,3 +179,6 @@ test/
 *Parser.py
 !*BaseParser.py
 *listener.py
+
+# Exclude JS files from committing to git
+javascript
