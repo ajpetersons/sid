@@ -4,6 +4,20 @@ from sid.processor.fingerprint import Fingerprint
 
 class SID(object):
     def __init__(self, k, w, language, robust_winnowing=False):
+        """Method initializes SID class instance by setting parameters for 
+        detection.
+        
+        :param k: Size of k-grams to consider
+        :type k: int
+        :param w: Window size where each window of lentgth w will contain at 
+            least one fingerprint
+        :type w: int
+        :param language: Programming language of the source code
+        :type language: str
+        :param robust: Flag to choose if robust winnowing should be used, 
+            defaults to False
+        :type robust: bool, optional
+        """
         self.k = k
         self.w = w
         self.robust_winnowing = robust_winnowing
@@ -11,6 +25,19 @@ class SID(object):
 
 
     def detect_pairwise(self, files, ignore=[]):
+        """Method detects pairwise similar fragments of the source files 
+            indicated. To exclude similar sections (due to some template or 
+            provided fragments) specify ignore parameter.
+        
+        :param files: File names to run similarity detection on
+        :type files: list of str
+        :param ignore: File names that include fragments which should be ignored 
+            if similarity is detected, defaults to []
+        :type ignore: list of str, optional
+        :return: An object describing fragments in files that match, partitioned 
+            by pairs of files
+        :rtype: dict
+        """
         self.reset()
 
         self.build_database(files, ignore)
@@ -30,6 +57,22 @@ class SID(object):
 
     
     def build_database(self, files, ignore=[]):
+        """Method parses files to compute all fingerprints within this file 
+            using Winnowing algorithm. Before fingerprint generation, files are 
+            passed through language specific parser that removes irrelevant 
+            features (whitespaces, etc.). Fingrprints from files are saved as 
+            well as inverse index of fingerprints is created mapping 
+            fingerprints to files where they are found. The data computed is 
+            saved in fields of the caller instance. To exclude similar sections 
+            (due to some template or provided fragments) specify ignore 
+            parameter.
+        
+        :param files: File names to run similarity detection on
+        :type files: list of str
+        :param ignore: File names that include fragments which should be ignored 
+            if similarity is detected, defaults to []
+        :type ignore: list of str, optional
+        """
         fingerprinter = Fingerprint(
             k=self.k, 
             w=self.w, 
@@ -73,6 +116,16 @@ class SID(object):
                 
 
     def find_matches(self):
+        """Method locates matching fingerprints in multiple files. To find 
+            matching fingerprints, method iterates through inverse index of 
+            fingerprints and for each pair of files sharing fingerprints, adds 
+            the matching fingerprints to a list (there might be many matching 
+            fingerprints in two files).
+        
+        :return: An object with filename pair as keys and list of matching 
+            fingerprint metadata as values
+        :rtype: dict
+        """
         matches = {}
 
         for fp in self.inv_index:
@@ -95,6 +148,21 @@ class SID(object):
 
     
     def group_matches(self, matches):
+        """Method iterates over all matching fingerprints for each pair of files
+            and groups them into fragments of consecutive matching fingerprints 
+            to detect longer matches. The returned dictionary contains entries 
+            for each pair of files with matching fingerprints, and for each 
+            matching fragment indices (line, column) are given for start and end 
+            of the match.
+        
+        :param matches: An object with filename pair as keys and list of 
+            matching fingerprint metadata as values
+        :type matches: dict
+        :return: An object with pairs of filenames for each pair of files with 
+            common fingerprints as keys; and lists of indices for start and end 
+            of matches as values
+        :rtype: dict
+        """
         grouped_matches = {}
 
         for fk in matches:
@@ -120,6 +188,24 @@ class SID(object):
 
 
     def merge_fragments(self, fk, fragments):
+        """Method merges lists of consecutive fingerprints and extends the 
+            boundaries of matched fragments to further matching symbols before 
+            and after the matching fingerprints. Returned list contains objects 
+            for each match in the two files concerned, with indices (line, 
+            column) for start and end of the match.
+        
+        :param fk: File key - pair of filenames where the given fragments match
+        :type fk: tuple of str
+        :param fragments: List of matching fragments. Each fragment is a tuple 
+            of two entries (one for each file) with lists of fingerprint 
+            metadata for match sequences
+        :type fragments: list of tuple of list of dict
+        :return: List of information for each matching fragment in the two 
+            files. For each fragment dictionary with two entries is returned, 
+            each of the entries represent list the start and end indices (line, 
+            column) for a file
+        :rtype: list of dict
+        """
         matches = []
 
         for f in fragments:
@@ -158,6 +244,26 @@ class SID(object):
     
 
     def prefix_length(self, fk, id_a, id_b):
+        """Method computes the length of prefix that also matches among the 
+            files before first matching fingerprints. Method takes into 
+            consideration ids of first fingerprints that match and tries to find 
+            matching segments up to the previous fingerprint (if it exists). The 
+            search must be limited by previous fingerprint, because it might 
+            match but contain sections of code from fragments that should be 
+            ignored.
+        
+        :param fk: File key - pair of filenames where the given fragments match
+        :type fk: tuple of str
+        :param id_a: Index of the fingerprint which is at the start of fragment 
+            in the first file
+        :type id_a: int
+        :param id_b: Index of the fingerprint which is at the start of fragment 
+            in the second file
+        :type id_b: int
+        :return: The length of matching prefix before the start of the 
+            fingerprint
+        :rtype: int
+        """
         meta = self.fingerprint_meta[fk[0]]
         fingerprints = self.fingerprints[fk[0]]
         fp_meta = meta[fingerprints[id_a]]
@@ -195,6 +301,25 @@ class SID(object):
     
 
     def suffix_length(self, fk, id_a, id_b):
+        """Method computes the length of suffix that also matches among the 
+            files after last matching fingerprints. Method takes into 
+            consideration ids of last fingerprints that match and tries to find 
+            matching segments before the next fingerprint (if it exists). The 
+            search must be limited by next fingerprint, because it might 
+            match but contain sections of code from fragments that should be 
+            ignored.
+        
+        :param fk: File key - pair of filenames where the given fragments match
+        :type fk: tuple of str
+        :param id_a: Index of the fingerprint which is at the end of fragment in
+            the first file
+        :type id_a: int
+        :param id_b: Index of the fingerprint which is at the end of fragment in
+            the second file
+        :type id_b: int
+        :return: The length of matching suffix after the end of the fingerprint
+        :rtype: int
+        """
         meta = self.fingerprint_meta[fk[0]]
         fingerprints = self.fingerprints[fk[0]]
         fp_meta = meta[fingerprints[id_a]]
