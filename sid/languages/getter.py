@@ -1,6 +1,6 @@
-from sid.languages.javascript.processor import clean as js_clean
 from sid.languages.base.LanguageCleaner import LanguageCleaner
-from sid.languages.python3.cleaner import Python3Cleaner
+from sid.languages.python3.Cleaner import Python3Cleaner
+# from sid.languages.matlab.Cleaner import MatlabCleaner
 
 
 def get_language_parser(name):
@@ -14,7 +14,9 @@ def get_language_parser(name):
     
     languages = {
         # FIXME: refactor for correct indices
-        "none": LanguageCleaner
+        "none": LanguageCleaner,
+        "python3": Python3Cleaner,
+        # "matlab": MatlabCleaner
     }
 
     if name in languages:
