@@ -12,6 +12,7 @@ class SIDPython3Walker(Python3Listener):
         self.symbols = []
         self.tokens = []
 
+
     def add_token(self, symbol, token):
         self.symbols.append(symbol)
         self.tokens.append({
@@ -63,7 +64,7 @@ class SIDPython3Walker(Python3Listener):
     def str_symbols(self):
         s = ""
         for symbol in self.symbols:
-            s += str(symbol)
+            s += chr(symbol)
 
         return s
 

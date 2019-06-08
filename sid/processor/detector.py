@@ -102,6 +102,13 @@ class SID(object):
             for idx, f in enumerate(fingerprints): 
                 fp = f['fingerprint']
                 self.fingerprints[file].append(fp)
+
+                if fp in self.fingerprint_meta[file]:
+                    # Fingerprint already seen in file, no need to repeatedly 
+                    # add it.
+                    continue
+
+                # FIXME: multiple identical fingerprints won't be matched
                 self.fingerprint_meta[file][fp] = {
                     'id': idx,
                     'offset': f['offset']
@@ -214,8 +221,8 @@ class SID(object):
 
             m = {}
             for i in range(2):
-                start_offset = f[0]['offset'] - prefix_len
-                end_offset = f[-1]['offset'] + suffix_len + self.k - 1
+                start_offset = f[i][0]['offset'] - prefix_len
+                end_offset = f[i][-1]['offset'] + suffix_len + self.k - 1
 
                 m[fk[i]] = {
                     'from': self.cleaned_source[fk[i]]['indices'][start_offset],
