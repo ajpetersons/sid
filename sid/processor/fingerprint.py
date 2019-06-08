@@ -1,4 +1,9 @@
 class Fingerprint(object):
+    """Class creates a reusable instance of fingerprinting engine using 
+        Winnowing algorithm. The algorithm is configurable during class 
+        initialization.
+    """
+
     d = 257 # Hashing constant
     q = (1 << 64) - 59 # A large prime, hash taken modulo this
 

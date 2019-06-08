@@ -3,6 +3,14 @@ from sid.processor.fingerprint import Fingerprint
 
 
 class SID(object):
+    """This class is the base of Similarity Detector - SID. This class should be 
+        used to run similarity detection, as it facilitates language parsing and 
+        cleaning, fingerprint generation as well as pairwise comparison of 
+        different files. The main method - `detect_pairwise` runs a detection on 
+        a set of files and returns any similarities between all pairs of files 
+        provided.
+    """
+
     def __init__(self, k, w, language, robust_winnowing=False):
         """Method initializes SID class instance by setting parameters for 
         detection.
