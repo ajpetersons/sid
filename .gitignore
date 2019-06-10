@@ -182,3 +182,5 @@ test/
 
 # Exclude JS files from committing to git
 javascript
+# Exclude incomplete matlab walker
+.matlab

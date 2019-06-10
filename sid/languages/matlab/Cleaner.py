@@ -1,8 +1,8 @@
 from antlr4 import *
 
 from sid.languages.base.LanguageCleaner import LanguageCleaner
-from sid.languages.matlab.matlabLexer import matlabLexer
-from sid.languages.matlab.matlabParser import matlabParser
+from sid.languages.matlab.MATLABLexer import MATLABLexer
+from sid.languages.matlab.MATLABParser import MATLABParser
 from sid.languages.matlab.Walker import SIDMatlabWalker
 
 
@@ -32,14 +32,14 @@ class MatlabCleaner(LanguageCleaner):
         :rtype: tuple of str and list of dict
         """
         contents = FileStream(file)
-        lexer = matlabLexer(contents)
+        lexer = MATLABLexer(contents)
         stream = CommonTokenStream(lexer)
-        parser = matlabParser(stream)
+        parser = MATLABParser(stream)
 
-        tree = parser.file_input()
+        tree = parser.fileDecl()
         listener = SIDMatlabWalker()
 
         walker = ParseTreeWalker()
         walker.walk(listener, tree)
-
+        
         return listener.str_symbols(), listener.tokens
