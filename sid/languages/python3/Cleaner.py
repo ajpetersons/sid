@@ -13,14 +13,14 @@ class Python3Cleaner(LanguageCleaner):
     """
 
     def __init__(self):
-        """Method initializes a new instance of Python 3 language cleaner
+        """Method initializes a new instance of Python 3 language cleaner.
         """
         super().__init__()
         self.name = "python3"
 
 
     def clean(self, file):
-        """Method takes an input file name, reads this file an parses it with 
+        """Method takes an input file name, reads this file and parses it with 
             ANTLR. This method wraps basic ANTLR actions that would be necessary 
             in order to simplify language processing.
         
