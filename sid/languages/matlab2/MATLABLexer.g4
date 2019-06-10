@@ -19,11 +19,19 @@ ELSE : 'else' ;
 
 WHILE : 'while' ;
 
+FOR : 'for' ;
+
 SWITCH : 'switch' ;
 
 CASE : 'case' ; 
 
 OTHERWISE : 'otherwise' ;
+
+BREAK : 'break' ;
+
+CONTINUE : 'continue' ;
+
+RETURN : 'return' ;
 
 // Symbols
 EQUALS : '=' ;

@@ -1,5 +1,8 @@
 parser grammar MATLABParser;
 
+// base from https://github.com/mattmcd/ParseMATLAB
+// adapted some rules from https://github.com/antlr/grammars-v4/tree/master/matlab
+
 options { tokenVocab=MATLABLexer;}
 
 fileDecl  
@@ -79,20 +82,58 @@ whileStat
     : WHILE expr endStat statBlock* END
     ;
 
-caseStat
+forStat
+    : FOR ID EQUALS expr endStat statBlock* END
+    | FOR LPAREN ID EQUALS expr RPAREN statBlock* END
+    ;
+
+switchStat
     : SWITCH expr endStat 
-      (CASE expr endStat statBlock*)*
-      (OTHERWISE endStat statBlock*)?
+      caseStat*
+      otherwiseStat?
       END
     ;
+
+caseStat
+    : CASE expr endStat statBlock*
+    ;
+
+otherwiseStat
+    : OTHERWISE endStat statBlock*
+    ;
+
+jumpStat
+   : BREAK endStat
+   | CONTINUE endStat
+   | RETURN endStat
+   ;
 
 stat
     : dotRef EQUALS expr
     | ifStat
     | whileStat
-    | caseStat
+    | forStat
+    | switchStat
+    | jumpStat
     | expr 
     | NL
+    ;
+
+expr
+// https://uk.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
+    : exprList
+    | LPAREN exprList RPAREN
+    | expr LPAREN exprList RPAREN
+    ;
+
+exprList
+    : listExpr (',' listExpr)*
+    ;
+
+listExpr
+    : arrayExpr
+    | cellExpr
+    | logicExpr
     ;
 
 arrayExpr
@@ -105,29 +146,42 @@ cellExpr
     | LBRACE RBRACE
     ;
 
-expr
-    : expr LPAREN exprList RPAREN
-    | expr (TRANS|CTRANS)
-    | expr (MPOW|POW) expr
-    | (PLUS|MINUS|NOT) expr
-    | expr (MTIMES|TIMES|MLDIVIDE|LDIVIDE|MRDIVIDE|RDIVIDE) expr
-    | expr (PLUS|MINUS) expr
-    | expr COLON expr
-    | expr (NOT|EQUALTO|GT|LT|GE|LE) expr
-    | expr VECAND expr
-    | expr VECOR expr
-    | expr SCALAND expr
-    | expr SCALOR expr
-    | dotRef
-    | INT | FLOAT | SCI  
-    | STRING
-    | arrayExpr
-    | cellExpr
-    | LPAREN expr RPAREN
+logicExpr
+    : compExpr ((VECAND|VECOR|SCALAND|SCALOR) compExpr)*
     ;
 
-exprList
-    : expr (',' expr)*
+compExpr
+    : colonExpr ((NOT|EQUALTO|GT|LT|GE|LE) colonExpr)*
+    ;
+
+colonExpr
+    : additiveExpr (COLON additiveExpr)*
+    ;
+
+additiveExpr
+    : multiplicativeExpr ((PLUS|MINUS) multiplicativeExpr)*
+    ;
+
+multiplicativeExpr
+    : signExpr ((MTIMES|TIMES|MLDIVIDE|LDIVIDE|MRDIVIDE|RDIVIDE) signExpr)*
+    ;
+
+signExpr
+    : (PLUS|MINUS|NOT)? powExpr
+    ;
+
+powExpr
+    : transposeExpr ((MPOW|POW) transposeExpr)*
+    ;
+
+transposeExpr
+    : basicExpr (TRANS|CTRANS)?
+    ;
+
+basicExpr
+    : dotRef
+    | INT | FLOAT | SCI
+    | STRING
     ;
 
 exprArrayList
