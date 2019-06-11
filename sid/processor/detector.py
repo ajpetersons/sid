@@ -1,3 +1,5 @@
+import logging
+
 from sid.languages.getter import get_language_parser
 from sid.processor.fingerprint import Fingerprint
 
@@ -31,6 +33,8 @@ class SID(object):
         self.robust_winnowing = robust_winnowing
         self.language_parser = get_language_parser(language)()
 
+        logging.debug('Prepared SID class instance')
+
 
     def detect_pairwise(self, files, ignore=[]):
         """Method detects pairwise similar fragments of the source files 
@@ -46,10 +50,15 @@ class SID(object):
             by pairs of files
         :rtype: dict
         """
+        logging.info('Will start detection process')
         self.reset()
 
         self.build_database(files, ignore)
+        logging.info('Fingerprint database built')
+
         matches =  self.find_matches()
+        logging.info('Found matches in {} file pairs'.
+            format(len(matches.keys())))
 
         return self.group_matches(matches)
 
@@ -96,15 +105,24 @@ class SID(object):
             for f in fingerprints:
                 self.ignore.append(f['fingerprint'])
 
+        logging.info('Completed parse of ignored files')
+        logging.debug('Ignored files containing {} fingerprints'.
+            format(len(self.ignore)))
+
         for file in files:
             self.fingerprint_meta[file] = {}
 
+            logging.info('Will parse {}'.format(file))
             source, indices = self.language_parser.clean(file)
+
+            logging.debug('Done parsing, handing to fingerprinter')
             fingerprints = fingerprinter.generate(source)
+
             self.cleaned_source[file] = {
                 'source': source,
                 'indices': indices
             }
+            logging.info('Done fingerprinting {}'.format(file))
             
             self.fingerprints[file] = []
             for idx, f in enumerate(fingerprints): 
@@ -335,6 +353,8 @@ class SID(object):
         :return: The length of matching suffix after the end of the fingerprint
         :rtype: int
         """
+        # TODO: might be able to merge with prefix_length
+        # TODO: probably should add more comments about some code choices
         meta = self.fingerprint_meta[fk[0]]
         fingerprints = self.fingerprints[fk[0]]
         fp_meta = meta[fingerprints[id_a]]
