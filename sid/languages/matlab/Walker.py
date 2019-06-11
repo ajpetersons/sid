@@ -69,6 +69,7 @@ class SIDMatlabWalker(MATLABParserListener):
             FUNC_BEGIN: "FUNC_BEGIN",
             FUNC_END: "FUNC_END",
             IF_BEGIN: "IF_BEGIN",
+            # TODO: add else?
             IF_END: "IF_END",
             RETURN: "RETURN",
             SWITCH_BEGIN: "SWITCH_BEGIN",

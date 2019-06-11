@@ -73,6 +73,7 @@ class SIDPython3Walker(Python3Listener):
             FOR_BEGIN: "FOR_BEGIN",
             FOR_END: "FOR_END",
             IF_BEGIN: "IF_BEGIN",
+            # TODO: add else/elif ?
             IF_END: "IF_END",
             IMPORT: "IMPORT",
             LAMBDA: "LAMBDA",

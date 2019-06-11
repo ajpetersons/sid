@@ -4,6 +4,22 @@ from sid.languages.matlab.Cleaner import MatlabCleaner
 from sid.languages.errors import UnknownLanguageError
 
 
+languages = {
+    "plain": LanguageCleaner,
+    "python3": Python3Cleaner,
+    "matlab": MatlabCleaner
+}
+
+
+def available_languages():
+    """Function lists all languages supported by SID.
+    
+    :return: List of supported languages
+    :rtype: list of str
+    """
+    return languages.keys()
+
+
 def get_language_parser(name):
     """Function retrieves an uninitialized parser for each language. Each parser 
         should extend LanguageCleaner class. If text needs to be mapped 1:1 from 
@@ -19,12 +35,6 @@ def get_language_parser(name):
     :return: Class instance of language type initialized for processing
     :rtype: function
     """
-    
-    languages = {
-        "none": LanguageCleaner,
-        "python3": Python3Cleaner,
-        "matlab": MatlabCleaner
-    }
 
     if name in languages:
         return languages[name]
