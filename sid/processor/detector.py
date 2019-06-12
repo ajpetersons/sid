@@ -129,23 +129,25 @@ class SID(object):
                 fp = f['fingerprint']
                 self.fingerprints[file].append(fp)
 
-                if fp in self.fingerprint_meta[file]:
-                    # Fingerprint already seen in file, no need to repeatedly 
-                    # add it.
-                    continue
+                if fp not in self.fingerprint_meta[file]:
+                    # This is the first time we see this fingerprint in this 
+                    # file
+                    self.fingerprint_meta[file][fp] = []
 
-                # FIXME: multiple identical fingerprints won't be matched
-                self.fingerprint_meta[file][fp] = {
+                    if fp not in self.ignore:
+                        # If fingerprint should be ignored, we still keep it in 
+                        # file descriptions, but omit it from inverse index to 
+                        # not find during matching. In any case, adding to 
+                        # inverse index should only be done once per file even 
+                        # if fingerprint has duplicates
+                        if fp not in self.inv_index:
+                            self.inv_index[fp] = []
+                        self.inv_index[fp].append(file)
+
+                self.fingerprint_meta[file][fp].append({
                     'id': idx,
                     'offset': f['offset']
-                }
-
-                if fp in self.ignore:
-                    continue
-
-                if fp not in self.inv_index:
-                    self.inv_index[fp] = []
-                self.inv_index[fp].append(file)
+                })
                 
 
     def find_matches(self):
@@ -161,9 +163,7 @@ class SID(object):
         """
         matches = {}
 
-        for fp in self.inv_index:
-            files = self.inv_index[fp]
-
+        for fp, files in self.inv_index.items():
             # The loop won't start execution if the length of files is 1, which
             # is an uninteresting fingerprint.
             for i in range(len(files) - 1):
@@ -199,25 +199,104 @@ class SID(object):
         grouped_matches = {}
 
         for fk in matches:
-            matches[fk].sort(key=lambda val: (val[0]['id'], val[1]['id']))
+            if fk[0] not in grouped_matches:
+                grouped_matches[fk[0]] = []
+            grouped_matches[fk[0]].append(
+                self.xxx(fk, 0, 1, matches[fk])
+            )
 
-            fragments = []
-
-            for m in matches[fk]:
-                if len(fragments) == 0:
-                    fragments.append(([m[0]], [m[1]]))
-                    continue
-                
-                if (fragments[-1][0][-1]['id'] + 1 == m[0]['id'] and
-                        fragments[-1][1][-1]['id'] + 1 == m[1]['id']):
-                    fragments[-1][0].append(m[0])
-                    fragments[-1][1].append(m[1])
-                else:
-                    fragments.append(([m[0]], [m[1]]))
-
-            grouped_matches[fk] = self.merge_fragments(fk, fragments)
+            if fk[1] not in grouped_matches:
+                grouped_matches[fk[1]] = []
+            grouped_matches[fk[1]].append(
+                self.xxx(fk, 1, 0, matches[fk])
+            )
 
         return grouped_matches
+
+
+    def xxx(self, fk, file, source, matches):
+        """Method iterates over all fingerprints of `file` (and their 
+            counterparts in `source` file) to find longest matching sequences of 
+            fingerprints. This task is performed, assuming that one file 
+            contains the original (`source`) code, while the other (`file`) has 
+            copied parts of it. The method iterates over matched fingerprints 
+            and searches for the longest sequence, finding matches for all 
+            matched fingerprints of `file`. There may be fingerprints in 
+            `source` file that match, but are not included because they were 
+            either shorter matches or there were other matches of the same 
+            length.
+        
+        :param fk: File key - pair of filenames where given fingerprints match
+        :type fk: tuple
+        :param file: Index in `fk` of the file which is assumed to have copied 
+            from `source`
+        :type file: int
+        :param source: Index in `fk` of the file which is assumed has copied 
+            from to `file`
+        :type source: int
+        :param matches: All matching fingerprints among both files
+        :type matches: list of tuple
+        :return: The matched sequences assuming author of `file` has copied from 
+            author of `source` (this is only an assumption when looking for 
+            matches to specify inclusion of all fingerprints from `file`). 
+            Sequences consist of fragment borders in the original source file
+        :rtype: dict
+        """
+        expanded_matches = []
+        for m in matches:
+            for fp in m[file]:
+                expanded_matches.append((fp, m[source]))
+        
+        expanded_matches.sort(key=lambda val: val[0]['id'])
+        # expanded_matches format: [ ({file_meta}, [ {source_meta} ]) ]
+        # expanded_matches has sorted fingerprints for file. Each fingerprint   
+        # has an associated list of all fingerprints in the potential source 
+        # file
+
+        fragments = []
+
+        for m in expanded_matches:
+            # m is a pair (fingerprint, [matching fingerprints]), thus indexing 
+            # is 0 and 1 based, not on keys supplied as arguments to this 
+            # function
+            if (len(fragments) == 0 or 
+                    fragments[-1][fk[file]]['to']['id'] + 1 != m[0]['id']):
+                # This is the first iteration and no fragments have been 
+                # observed or the current file fingerprints do not form a 
+                # sequence
+                fragments.append({
+                    fk[file]: { 'from': m[0], 'to': m[0] },
+                    fk[source]: [ { 'from': x, 'to': x } for x in m[1] ]
+                })
+                continue
+
+            existing_fragments = fragments[-1][fk[source]]
+            continuing_fragments = []
+            following_fragments = { x['id']: x for x in m[1] }
+            for f in existing_fragments:
+                next_id = f['to']['id'] + 1
+                if next_id in following_fragments:
+                    # This match among fingerprints continues for longer
+                    f['to'] = following_fragments[next_id]
+                    continuing_fragments.append(f)
+            
+            if len(continuing_fragments) == 0:
+                # For current file the fingerprint match continues, but none 
+                # of the matches in other files continue
+                fragments.append({
+                    fk[file]: { 'from': m[0], 'to': m[0] },
+                    fk[source]: [ { 'from': x, 'to': x } for x in m[1] ]
+                })
+            else:
+                # This match continues, add to further matching
+                fragments[-1][fk[file]]['to'] = m[0]
+                fragments[-1][fk[source]] = continuing_fragments
+            
+        # fragments format: [ {file: {meta}, source: [ {meta} ]} ]
+        return {
+            "file": fk[source],
+            "indices": self.merge_fragments((fk[file], fk[source]), fragments)
+        }
 
 
     def merge_fragments(self, fk, fragments):
@@ -229,33 +308,41 @@ class SID(object):
         
         :param fk: File key - pair of filenames where the given fragments match
         :type fk: tuple of str
-        :param fragments: List of matching fragments. Each fragment is a tuple 
-            of two entries (one for each file) with lists of fingerprint 
-            metadata for match sequences
-        :type fragments: list of tuple of list of dict
+        :param fragments: List of matching fragments. Each fragment is a dict of 
+            two entries (one for each file). The file coming first in file key 
+            should have only one match description, the other file should have a 
+            list of corresponding matches in the other (potential source) file
+        :type fragments: list of dict
         :return: List of information for each matching fragment in the two 
             files. For each fragment dictionary with two entries is returned, 
             each of the entries represent list the start and end indices (line, 
-            column) for a file
+            column) for a matching fragment in each file
         :rtype: list of dict
         """
         matches = []
 
         for f in fragments:
-            prefix_len = self.prefix_length(fk, f[0][0]['id'], f[1][0]['id'])
-            suffix_len = self.suffix_length(fk, f[0][-1]['id'], f[1][-1]['id'])
+            matches.append({
+                "this_file": f[fk[0]],
+                "source_file": f[fk[1]][0]
+            })
 
-            m = {}
-            for i in range(2):
-                start_offset = f[i][0]['offset'] - prefix_len
-                end_offset = f[i][-1]['offset'] + suffix_len + self.k - 1
+        # TODO: add expansion of fragments by searching for longest prefix and suffix
+        # for f in fragments:
+        #     prefix_len = self.prefix_length(fk, f[0][0]['id'], f[1][0]['id'])
+        #     suffix_len = self.suffix_length(fk, f[0][-1]['id'], f[1][-1]['id'])
 
-                m[fk[i]] = {
-                    'from': self.cleaned_source[fk[i]]['indices'][start_offset],
-                    'to': self.cleaned_source[fk[i]]['indices'][end_offset],
-                }
+        #     m = {}
+        #     for i in range(2):
+        #         start_offset = f[i][0]['offset'] - prefix_len
+        #         end_offset = f[i][-1]['offset'] + suffix_len + self.k - 1
 
-            matches.append(m)
+        #         m[fk[i]] = {
+        #             'from': self.cleaned_source[fk[i]]['indices'][start_offset],
+        #             'to': self.cleaned_source[fk[i]]['indices'][end_offset],
+        #         }
+
+        #     matches.append(m)
 
         return matches
 
@@ -297,7 +384,7 @@ class SID(object):
             fingerprint
         :rtype: int
         """
-        meta = self.fingerprint_meta[fk[0]]
+        meta = self.fingerprint_meta[fk[0]] # FIXME: is array of fingerprint meta
         fingerprints = self.fingerprints[fk[0]]
         fp_meta = meta[fingerprints[id_a]]
         offset_a = fp_meta['offset']
@@ -307,7 +394,7 @@ class SID(object):
             prev_fp_meta = meta[fingerprints[id_a-1]]
             prefix_a = fp_meta['offset'] - (prev_fp_meta['offset'] + 1)
 
-        meta = self.fingerprint_meta[fk[1]]
+        meta = self.fingerprint_meta[fk[1]] # FIXME: is array of fingerprint meta
         fingerprints = self.fingerprints[fk[1]]
         fp_meta = meta[fingerprints[id_b]]
         offset_b = fp_meta['offset']
@@ -355,7 +442,7 @@ class SID(object):
         """
         # TODO: might be able to merge with prefix_length
         # TODO: probably should add more comments about some code choices
-        meta = self.fingerprint_meta[fk[0]]
+        meta = self.fingerprint_meta[fk[0]] # FIXME: is array of fingerprint meta
         fingerprints = self.fingerprints[fk[0]]
         fp_meta = meta[fingerprints[id_a]]
         offset_a = fp_meta['offset'] + self.k - 1
@@ -365,7 +452,7 @@ class SID(object):
             next_fp_meta = meta[fingerprints[id_a+1]]
             suffix_a = (next_fp_meta['offset'] - 1) - fp_meta['offset']
 
-        meta = self.fingerprint_meta[fk[1]]
+        meta = self.fingerprint_meta[fk[1]] # FIXME: is array of fingerprint meta
         fingerprints = self.fingerprints[fk[1]]
         fp_meta = meta[fingerprints[id_b]]
         offset_b = fp_meta['offset'] + self.k - 1

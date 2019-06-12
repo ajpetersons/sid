@@ -45,7 +45,7 @@ def cli(ctx):
 @click.option('--window', '-w', default=10, show_default=True, 
     help='Window size for fingerprint spacing. This is the length of longest ' +
          'match that should not go unnoticed')
-@click.option('--json', default=False, type=bool, 
+@click.option('--json / --no-json', default=False, 
     help='Output similarity detection results in JSON format instead of ' +
          'prettified text')
 @click.pass_context
