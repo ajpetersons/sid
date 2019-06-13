@@ -56,11 +56,13 @@ class SID(object):
         self.build_database(files, ignore)
         logging.info('Fingerprint database built')
 
-        matches =  self.find_matches()
+        matches = self.find_matches()
         logging.info('Found matches in {} file pairs'.
             format(len(matches.keys())))
 
-        return self.group_matches(matches)
+        grouped_matches = self.group_matches(matches)
+
+        return self.sanitize_matches(grouped_matches)
 
     
     def reset(self):
@@ -202,19 +204,19 @@ class SID(object):
             if fk[0] not in grouped_matches:
                 grouped_matches[fk[0]] = []
             grouped_matches[fk[0]].append(
-                self.xxx(fk, 0, 1, matches[fk])
+                self.aggregate_matches(fk, 0, 1, matches[fk])
             )
 
             if fk[1] not in grouped_matches:
                 grouped_matches[fk[1]] = []
             grouped_matches[fk[1]].append(
-                self.xxx(fk, 1, 0, matches[fk])
+                self.aggregate_matches(fk, 1, 0, matches[fk])
             )
 
         return grouped_matches
 
 
-    def xxx(self, fk, file, source, matches):
+    def aggregate_matches(self, fk, file, source, matches):
         """Method iterates over all fingerprints of `file` (and their 
             counterparts in `source` file) to find longest matching sequences of 
             fingerprints. This task is performed, assuming that one file 
@@ -294,8 +296,8 @@ class SID(object):
             
         # fragments format: [ {file: {meta}, source: [ {meta} ]} ]
         return {
-            "file": fk[source],
-            "indices": self.merge_fragments((fk[file], fk[source]), fragments)
+            'file': fk[source],
+            'indices': self.merge_fragments((fk[file], fk[source]), fragments)
         }
 
 
@@ -320,11 +322,19 @@ class SID(object):
         :rtype: list of dict
         """
         matches = []
+        borders = ['from', 'to']
 
         for f in fragments:
+            indices = self.cleaned_source[fk[0]]['indices']
+            fragment = f[fk[0]]
+            this_file = { k: indices[fragment[k]['offset']] for k in borders }
+            indices = self.cleaned_source[fk[1]]['indices']
+            fragment = f[fk[1]][0]
+            source_file = { k: indices[fragment[k]['offset']] for k in borders }
+
             matches.append({
-                "this_file": f[fk[0]],
-                "source_file": f[fk[1]][0]
+                'this_file': this_file,
+                'source_file': source_file
             })
 
         # TODO: add expansion of fragments by searching for longest prefix and suffix
@@ -476,3 +486,74 @@ class SID(object):
             suffix += 1
         
         return suffix
+
+
+    def sanitize_matches(self, matches):
+        """Method restructures found matches in a more generic format that can 
+        be more easily parsed by object based programs.
+        
+        :param matches: The matched sequences assuming author of `file` has 
+            copied from author of `source` (this is only an assumption when 
+            looking for matches to specify inclusion of all fingerprints from 
+            `file`). Sequences consist of fragment borders in the original 
+            source file
+        :type matches: dict
+        :return: An object containing single key with list of all found matches
+        :rtype: dict
+        """
+        clean_matches = []
+
+        for file, matched_files in matches.items():
+            for idx, match in enumerate(matched_files):
+                match['similarity'] = self.get_similarity(file, match['indices'])
+                matched_files[idx] = match
+
+            clean_matches.append({
+                'file': file,
+                'possible_sources': matched_files
+            })
+
+        return {
+            'match_results': clean_matches
+        }
+
+
+    def get_similarity(self, file, indices):
+        """Method calculates similarity metrics among two files, given code 
+            fragment matches from one file to another, assuming that `file` has 
+            fragments copied from other source (this does not prove that the 
+            code was acutally copied). Metrics like percentage match and matched 
+            line counts are calculated.
+        
+        :param file: File name for which the metrics should be calculated
+        :type file: str
+        :param indices: List of matching fragments among the files, consisting 
+            of list of borders where matches are found in original source files
+        :type indices: list of dict
+        :return: Similarity metrics among the files. These metrics are 
+            one-directional, since the fragments matched can differ
+        :rtype: dict
+        """
+
+        last_line = 0
+        lines_matched = 0
+        for i in indices:
+            match = i['this_file']
+            if match['from']['line'] > last_line:
+                # If this match starts on a different line than previous match 
+                # ended, add 1 line to the count
+                lines_matched += 1
+            
+            lines_matched += match['to']['line'] - match['from']['line']
+            last_line = match['to']['line']
+
+        # Count total lines in the file
+        with open(file) as f:
+            for i, l in enumerate(f):
+                pass
+        total_lines = i + 1
+        
+        return {
+            'percentage': lines_matched / total_lines,
+            'lines': lines_matched
+        }
