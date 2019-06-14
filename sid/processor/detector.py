@@ -118,7 +118,7 @@ class SID(object):
             source, indices = self.language_parser.clean(file)
 
             logging.debug('Done parsing, handing to fingerprinter')
-            fingerprints = fingerprinter.generate(source)
+            self.fingerprints[file] = fingerprinter.generate(source)
 
             self.cleaned_source[file] = {
                 'source': source,
@@ -126,10 +126,8 @@ class SID(object):
             }
             logging.info('Done fingerprinting {}'.format(file))
             
-            self.fingerprints[file] = []
-            for idx, f in enumerate(fingerprints): 
+            for idx, f in enumerate(self.fingerprints[file]): 
                 fp = f['fingerprint']
-                self.fingerprints[file].append(fp)
 
                 if fp not in self.fingerprint_meta[file]:
                     # This is the first time we see this fingerprint in this 
@@ -394,37 +392,40 @@ class SID(object):
             fingerprint
         :rtype: int
         """
-        meta = self.fingerprint_meta[fk[0]] # FIXME: is array of fingerprint meta
-        fingerprints = self.fingerprints[fk[0]]
-        fp_meta = meta[fingerprints[id_a]]
-        offset_a = fp_meta['offset']
+        ids = (id_a, id_b)
 
-        prefix_a = offset_a
-        if id_a > 0:
-            prev_fp_meta = meta[fingerprints[id_a-1]]
-            prefix_a = fp_meta['offset'] - (prev_fp_meta['offset'] + 1)
+        max_length = None # Max possible prefix length
+        for f, id in zip(fk, ids):
+            fp_meta = self.fingerprints[f][id]
+            offset = fp_meta['offset']
 
-        meta = self.fingerprint_meta[fk[1]] # FIXME: is array of fingerprint meta
-        fingerprints = self.fingerprints[fk[1]]
-        fp_meta = meta[fingerprints[id_b]]
-        offset_b = fp_meta['offset']
+            # Initial prefix is from file start to current fingerprint
+            prefix = offset 
+            if id > 0:
+                # If there is previous fingerprint, then prefix can be up to 
+                # that fingerprint
+                prev_fp_meta = self.fingerprints[f][id - 1]
+                prefix = offset - (prev_fp_meta['offset'] + 1)
 
-        prefix_b = offset_b
-        if id_b > 0:
-            prev_fp_meta = meta[fingerprints[id_b-1]]
-            prefix_b = fp_meta['offset'] - (prev_fp_meta['offset'] + 1)
-
-        max_length = min(prefix_a, prefix_b)
+            # Global length will be minimum of all lengths
+            if max_length is None or max_length > prefix:
+                max_length = prefix
 
         prefix = 0
         source_a = self.cleaned_source[fk[0]]['source']
         source_b = self.cleaned_source[fk[1]]['source']
-        while prefix < max_length:
-            idx_a = offset_a - prefix - 1
-            idx_b = offset_b - prefix - 1
-            if source_a[idx_a] != source_b[idx_b]:
-                break
 
+        # Start looking from the previous position from start of the current
+        # fingerprint
+        target_a = self.fingerprints[fk[0]][id_a]['offset'] - 1
+        target_b = self.fingerprints[fk[1]][id_b]['offset'] - 1
+        while prefix < max_length:
+            if source_a[target_a] != source_b[target_b]:
+                # If prefixes do not match, return the longest match
+                break
+            # Otherwise step backward one position
+            target_a -= 1
+            target_b -= 1
             prefix += 1
         
         return prefix
@@ -450,39 +451,40 @@ class SID(object):
         :return: The length of matching suffix after the end of the fingerprint
         :rtype: int
         """
-        # TODO: might be able to merge with prefix_length
-        # TODO: probably should add more comments about some code choices
-        meta = self.fingerprint_meta[fk[0]] # FIXME: is array of fingerprint meta
-        fingerprints = self.fingerprints[fk[0]]
-        fp_meta = meta[fingerprints[id_a]]
-        offset_a = fp_meta['offset'] + self.k - 1
+        ids = (id_a, id_b)
 
-        suffix_a = len(self.cleaned_source[fk[0]]['source']) - 1 - offset_a
-        if id_a < len(self.fingerprints[fk[0]]) - 1:
-            next_fp_meta = meta[fingerprints[id_a+1]]
-            suffix_a = (next_fp_meta['offset'] - 1) - fp_meta['offset']
+        max_length = None # Max possible suffix length
+        for f, id in zip(fk, ids):
+            fp_meta = self.fingerprints[f][id]
+            offset = fp_meta['offset']
 
-        meta = self.fingerprint_meta[fk[1]] # FIXME: is array of fingerprint meta
-        fingerprints = self.fingerprints[fk[1]]
-        fp_meta = meta[fingerprints[id_b]]
-        offset_b = fp_meta['offset'] + self.k - 1
+            source = self.cleaned_source[f]['source']
+            # Initial suffix is from file start to current fingerprint
+            suffix = (len(source) - 1) - (offset + self.k - 1)
+            if id < len(self.fingerprints[f]) - 1:
+                # If there is next fingerprint, then suffix can be up to 
+                # that fingerprint
+                next_fp_meta = self.fingerprints[f][id + 1]
+                suffix = (next_fp_meta['offset'] - 1) - offset
 
-        suffix_b = len(self.cleaned_source[fk[1]]['source']) - 1 - offset_b
-        if id_b < len(self.fingerprints[fk[1]]) - 1:
-            next_fp_meta = meta[fingerprints[id_b+1]]
-            suffix_b = (next_fp_meta['offset'] - 1) - fp_meta['offset']
-
-        max_length = min(suffix_a, suffix_b)
+            # Global length will be minimum of all lengths
+            if max_length is None or max_length > suffix:
+                max_length = suffix
 
         suffix = 0
         source_a = self.cleaned_source[fk[0]]['source']
         source_b = self.cleaned_source[fk[1]]['source']
-        while suffix < max_length:
-            idx_a = offset_a + suffix + 1
-            idx_b = offset_b + suffix + 1
-            if source_a[idx_a] != source_b[idx_b]:
-                break
 
+        # Start looking from the position right after the current fingerprint
+        target_a = self.fingerprints[fk[0]][id_a]['offset'] + self.k
+        target_b = self.fingerprints[fk[1]][id_b]['offset'] + self.k
+        while suffix < max_length:
+            if source_a[target_a] != source_b[target_b]:
+                # If suffixes do not match, return the longest match
+                break
+            # Otherwise step forward one position
+            target_a += 1
+            target_b += 1
             suffix += 1
         
         return suffix
