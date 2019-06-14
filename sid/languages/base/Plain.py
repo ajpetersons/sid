@@ -1,4 +1,7 @@
-class LanguageCleaner(object):
+from sid.languages.base.LanguageCleaner import LanguageCleaner
+
+
+class Plain(LanguageCleaner):
     """Class facilitates vase language cleaner. This class is intended to be 
         extended by language specific cleaners facilitating ANTLR or other 
         language processor commands. This class implements a basic cleaner which 
@@ -8,14 +11,12 @@ class LanguageCleaner(object):
     def __init__(self):
         """Method initializes a new instance of language cleaner.
         """
-        self.name = None
+        self.name = "identity"
 
 
     def clean(self, file):
-        """Method takes an input file name, reads this file and outputs cleaned
-            string with associated indices for tokens. All instances of 
-            LanguageCleaner should implement this method, as SID will call this 
-            to parse input source.
+        """Method takes an input file name, reads this file and outputs the saem
+            string with associated indices for tokens.
         
         :param file: Path to the file, which contains code to be processed
         :type file: str
@@ -24,4 +25,15 @@ class LanguageCleaner(object):
             of the characters in the original files as a list
         :rtype: tuple of str and list of dict
         """
-        raise NotImplementedError
+        token_locations = []
+
+        f = open(file, "r")
+        for line_idx, line in enumerate(f):
+            for char_idx, char in enumerate(line):
+                token_locations.append({
+                    'line': line_idx + 1, 
+                    'col': char_idx
+                })
+
+        f.seek(0)
+        return f.read(), token_locations

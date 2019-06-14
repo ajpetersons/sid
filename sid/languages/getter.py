@@ -1,11 +1,11 @@
-from sid.languages.base.LanguageCleaner import LanguageCleaner
+from sid.languages.base.Plain import Plain
 from sid.languages.python3.Cleaner import Python3Cleaner
 from sid.languages.matlab.Cleaner import MatlabCleaner
 from sid.languages.errors import UnknownLanguageError
 
 
 languages = {
-    "plain": LanguageCleaner,
+    "plain": Plain,
     "python3": Python3Cleaner,
     "matlab": MatlabCleaner
 }
