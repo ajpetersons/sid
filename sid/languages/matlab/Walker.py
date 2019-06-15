@@ -122,11 +122,9 @@ class SIDMatlabWalker(MATLABParserListener):
 
 
     def visitTerminal(self, node:TerminalNode):
-        # TODO: modify comment and source
         """Method implements functionality that will be invoked when visiting 
-            terminal nodes of program AST. Currently, only two cases of final 
-            nodes are considered (as implemented in JPlag: 
-            https://github.com/jplag/jplag/blob/9e6b2ba0c7532a0acaf9f88f4aa8b723d77a19c3/jplag.frontend.python-3/src/main/java/jplag/python3/JPlagPython3Listener.java ).
+            terminal nodes of program AST. Currently, only assignment operations 
+            are handled within terminal nodes
         
         :param node: The terminal node as parsed by ANTLR
         :type node: antlr4.tree.Tree.TerminalNode

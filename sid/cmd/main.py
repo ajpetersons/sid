@@ -139,33 +139,38 @@ There are multiple parameters that can be configured for SID command line tool:
         This is probably the main parameter as it lists all files that need to 
         be considered for similarity. This parameter should be repeated to input 
         multiple files.
-  Ignored files: There are often situations when some fragments of code are 
-        expected to be similar - code given during lectures, template code, 
-        standard algorithms, etc. SID allows to specify files that include 
-        fragments which should not be considered as similarity match, there can 
-        be multiple such parameters.
-  Language: This parameter sets the programming language used for similarity 
+  Ignored files: 
+        There are often situations when some fragments of code are expected to 
+        be similar - code given during lectures, template code, standard 
+        algorithms, etc. SID allows to specify files that include fragments 
+        which should not be considered as similarity match, there can be 
+        multiple such parameters.
+  Language: 
+        This parameter sets the programming language used for similarity 
         detection and submission preprocessing. Since preprocessing is language 
         specific and SID is not yet capable of determining the language 
         submissions are written in, this parameter is required and must always 
         be set by the user, otherwise SID will assume plain text files.
-  Fingerprint size: This integer parameter controls the size of k-grams used in 
-        hash calculation. Having longer k-grams means more information saved in 
-        each hash value, but will be less sensitive to small matches. This 
-        parameter is the main mean to control the sensitivity of the algorithm. 
-        Usually this value should be set such that any match that is smaller t
-        han fingerprint size is almost always uninteresting, but any match 
-        longer - almost always interesting.
-  Window size: This is the length of window in which a fingerprint is chosen. 
-        Each window consists of a number of consecutive k-grams, which are 
-        always offset by one (hence two consecutive k-grams will share k-1 
-        symbols). A fingerprint is chosen for each window in the code, with 
-        windows covering all possible consecutive fragments (of fixed length) of 
-        k-grams. Window size also represents the maximum interval between two 
-        consecutive fingerprints.
-  JSON results: By setting this parameter, similarity results can be retrieved 
-        in JSON format for further processing in GUI tools or other methods. By 
-        default SID outputs the results in a prettified format after completing 
+  Fingerprint size: 
+        This integer parameter controls the size of k-grams used in hash 
+        calculation. Having longer k-grams means more information saved in each 
+        hash value, but will be less sensitive to small matches. This parameter 
+        is the main mean to control the sensitivity of the algorithm. Usually 
+        this value should be set such that any match that is smaller than 
+        fingerprint size is almost always uninteresting, but any match longer - 
+        almost always interesting.
+  Window size: 
+        This is the length of window in which a fingerprint is chosen. Each 
+        window consists of a number of consecutive k-grams, which are always 
+        offset by one (hence two consecutive k-grams will share k-1 symbols). A 
+        fingerprint is chosen for each window in the code, with windows covering 
+        all possible consecutive fragments (of fixed length) of k-grams. Window 
+        size also represents the maximum interval between two consecutive 
+        fingerprints.
+  JSON results: 
+        By setting this parameter, similarity results can be retrieved in JSON 
+        format for further processing in GUI tools or other methods. By default 
+        SID outputs the results in a prettified format after completing 
         detection. Unfortunately formatting is not yet implemented, so JSON 
         output is returned always.
 
