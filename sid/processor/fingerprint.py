@@ -37,10 +37,10 @@ class Fingerprint(object):
         :return: Generated fingerprints for the source text
         :rtype: list of dict
         """
-        # generate fingerprints from source
         self.fingerprints = []
         self.source = source
         self.source_pos = 0 # Start of current k-gram in source
+        # Calculate the top degree of constant once as we always need it
         self.top_d = (self.d ** self.k) % self.q
 
         self.winnowing()

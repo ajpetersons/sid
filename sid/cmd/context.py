@@ -32,7 +32,9 @@ class Context(object):
         :type verbosity: int
         """
         if self.logging:
+            # Higher level command initialized logging, skip this function
             return
+        
         self.logging = True
         self.verbosity = verbosity
 

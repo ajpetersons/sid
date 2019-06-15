@@ -61,6 +61,8 @@ class SID(object):
             format(len(matches.keys())))
 
         grouped_matches = self.group_matches(matches)
+        logging.info('All matches have been grouped')
+        logging.info('Cleaning up and returning results...')
 
         return self.sanitize_matches(grouped_matches)
 
@@ -98,18 +100,20 @@ class SID(object):
             robust=self.robust_winnowing
         )
 
-        self.ignore = []
+        ignore_fp = []
 
         for file in ignore:
+            # Compute fingerprints for ignored files and save them in a list to 
+            # exclude matches between the submissions that correspond to them
             source, _ = self.language_parser.clean(file)
             fingerprints = fingerprinter.generate(source)
             
             for f in fingerprints:
-                self.ignore.append(f['fingerprint'])
+                ignore_fp.append(f['fingerprint'])
 
         logging.info('Completed parse of ignored files')
         logging.debug('Ignored files containing {} fingerprints'.
-            format(len(self.ignore)))
+            format(len(ignore_fp)))
 
         for file in files:
             self.fingerprint_meta[file] = {}
@@ -120,6 +124,8 @@ class SID(object):
             logging.debug('Done parsing, handing to fingerprinter')
             self.fingerprints[file] = fingerprinter.generate(source)
 
+            # Save tokenized source and indices for later lookup when computing 
+            # precise indices for matches
             self.cleaned_source[file] = {
                 'source': source,
                 'indices': indices
@@ -134,7 +140,7 @@ class SID(object):
                     # file
                     self.fingerprint_meta[file][fp] = []
 
-                    if fp not in self.ignore:
+                    if fp not in ignore_fp:
                         # If fingerprint should be ignored, we still keep it in 
                         # file descriptions, but omit it from inverse index to 
                         # not find during matching. In any case, adding to 
@@ -243,15 +249,15 @@ class SID(object):
         :rtype: dict
         """
         expanded_matches = []
+        # expanded_matches format: [ ({file_meta}, [ {source_meta} ]) ]
+        # expanded_matches has sorted fingerprints for file. Each fingerprint   
+        # has an associated list of all fingerprints in the potential source 
+        # file
         for m in matches:
             for fp in m[file]:
                 expanded_matches.append((fp, m[source]))
         
         expanded_matches.sort(key=lambda val: val[0]['id'])
-        # expanded_matches format: [ ({file_meta}, [ {source_meta} ]) ]
-        # expanded_matches has sorted fingerprints for file. Each fingerprint   
-        # has an associated list of all fingerprints in the potential source 
-        # file
 
         fragments = []
 
@@ -271,12 +277,19 @@ class SID(object):
                 continue
 
             existing_fragments = fragments[-1][fk[source]]
+            # existing_fragments are the last fragments that might still be 
+            # longer
             continuing_fragments = []
+            # continuing_fragments will hold all of existing_fragments that do 
+            # continue to match across both files
             following_fragments = { x['id']: x for x in m[1] }
+            # following_fragments are the fragments in `source` file that follow 
+            # the longest known match
             for f in existing_fragments:
                 next_id = f['to']['id'] + 1
                 if next_id in following_fragments:
-                    # This match among fingerprints continues for longer
+                    # This match among fingerprints continues for longer. We try 
+                    # to locate and keep only longest match
                     f['to'] = following_fragments[next_id]
                     continuing_fragments.append(f)
             
@@ -324,10 +337,11 @@ class SID(object):
 
         for f in fragments:
             indices = self.cleaned_source[fk[0]]['indices']
-            fragment = f[fk[0]]
+            fragment = f[fk[0]] # The fragment actually reported to user
             this_file = { k: indices[fragment[k]['offset']] for k in borders }
+
             indices = self.cleaned_source[fk[1]]['indices']
-            fragment = f[fk[1]][0]
+            fragment = f[fk[1]][0] # The fragment actually reported to user
             source_file = { k: indices[fragment[k]['offset']] for k in borders }
 
             matches.append({
@@ -335,7 +349,11 @@ class SID(object):
                 'source_file': source_file
             })
 
-        # TODO: add expansion of fragments by searching for longest prefix and suffix
+        # TODO: add expansion of fragments by searching for longest prefix and 
+        # suffix similarly as it is done below for single fragment. Now there 
+        # might be more fragments in `f[fk[1]]` and ideally we would report the 
+        # longest match
+
         # for f in fragments:
         #     prefix_len = self.prefix_length(fk, f[0][0]['id'], f[1][0]['id'])
         #     suffix_len = self.suffix_length(fk, f[0][-1]['id'], f[1][-1]['id'])
