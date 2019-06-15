@@ -172,13 +172,6 @@ test/
 
 ## Antlr ##
 .antlr
-*.tokens
-*.interp
-*Lexer.py
-!*BaseLexer.py
-*Parser.py
-!*BaseParser.py
-*listener.py
 
 # Exclude JS files from committing to git
 javascript
