@@ -73,7 +73,16 @@ project at School of Informatics in University of Edinburgh, with supervision
 from Kyriakos Kalorkoti. This tool is intended to be open source for anyone to 
 download, use and modify if needed. 
 
-## How to set up locally
+## Development guidelines
+
+### Installing existing software
+
+- Create a virtual environment (if desired)
+- Run `python setup.py install` to install locally Python package and command 
+line tool
+- Use command line tool by first running help: `sid --help`
+
+### Adding a new language
 
 - Download [Antlr jar file](https://www.antlr.org/download.html), and place in 
 `/usr/local/lib`
@@ -85,10 +94,18 @@ Anaconda
 - Create an alias for easier use: 
 `alias antlr4='java -jar /usr/local/lib/antlr-4.0-complete.jar'`
 - Download desired grammar (`*.g4`) file from Antlr 
-[library](https://github.com/antlr/grammars-v4)
+[library](https://github.com/antlr/grammars-v4) or another source
 - Run `antlr4 -Dlanguage=Python3 Language.g4` to build lexer and parser for the 
 desired language (Currently Python 3 and Matlab are available in 
 `sid/languages/.`)
-- Run `python setup.py install` to install locally Python package and command 
-line tool
-- Use command line tool by first running help: `sid --help`
+- Build a listener for the language using `LanguageListener.py` as base and 
+implementing necessary methods that store Language tokens. Previous 
+implementations of this class are located in `sid/languages/*/Walker.py`, and 
+all functions up to `visitTerminal()` should be implemented in a similar manner 
+as before
+- Create a language cleaner class (previous implementations at 
+`sid/languages/*/Cleaner.py`), that will parse code using ANTLR and create a 
+token list. The only thing that has to be changed is root node decalaration: 
+`tree = parser.rootNode()`
+- Add the new language to Parser getter and update any global non-code 
+references to language lists

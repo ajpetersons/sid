@@ -45,4 +45,8 @@ class Context(object):
         }
 
         level = levels[self.verbosity] if self.verbosity in levels else 'DEBUG'
+        # Remove all handlers associated with the root logger object.
+        for handler in logging.root.handlers:
+            logging.root.removeHandler(handler)
+
         logging.basicConfig(format=self.logFormat, level=level)
