@@ -1,4 +1,5 @@
 import logging
+from time import time
 
 from sid.languages.getter import get_language_parser
 from sid.processor.fingerprint import Fingerprint
@@ -51,6 +52,7 @@ class SID(object):
         :rtype: dict
         """
         logging.info('Will start detection process')
+        start = time()
         self.reset()
 
         self.build_database(files, ignore)
@@ -62,6 +64,7 @@ class SID(object):
 
         grouped_matches = self.group_matches(matches)
         logging.info('All matches have been grouped')
+        logging.info('Completed detection in {} seconds'.format(time() - start))
         logging.info('Cleaning up and returning results...')
 
         return self.sanitize_matches(grouped_matches)
@@ -333,42 +336,54 @@ class SID(object):
         :rtype: list of dict
         """
         matches = []
-        borders = ['from', 'to']
+        last_match_id = 0
 
         for f in fragments:
+            from_fragment = f[fk[0]] # The fragment actually reported to user
+
+            max_allowed_prefix = from_fragment['from']['offset'] - last_match_id
+            max_delta_prefix = 0
+            max_delta_suffix = 0
+            max_delta_idx = None
+
+            for idx, candidate in enumerate(f[fk[1]]):
+                prefix = self.prefix_length(fk, from_fragment['from']['id'], 
+                                                candidate['from']['id'])
+                # Due to shorter fragments in the source file, matches in a 
+                # single file can overlap. This expression ensures that matches 
+                # do not overlap
+                prefix = min(prefix, max_allowed_prefix)
+
+                suffix = self.suffix_length(fk, from_fragment['to']['id'], 
+                                                candidate['to']['id'])
+
+                if max_delta_prefix + max_delta_suffix < prefix + suffix:
+                    max_delta_prefix = prefix
+                    max_delta_suffix = suffix
+                    max_delta_idx = idx
+
+            prefix = max_delta_prefix
+            suffix = max_delta_suffix + self.k - 1
+
             indices = self.cleaned_source[fk[0]]['indices']
-            fragment = f[fk[0]] # The fragment actually reported to user
-            this_file = { k: indices[fragment[k]['offset']] for k in borders }
+            this_file = { 
+                'from': indices[from_fragment['from']['offset'] - prefix],
+                'to': indices[from_fragment['to']['offset'] + suffix]
+            }
 
             indices = self.cleaned_source[fk[1]]['indices']
-            fragment = f[fk[1]][0] # The fragment actually reported to user
-            source_file = { k: indices[fragment[k]['offset']] for k in borders }
+            to_fragment = f[fk[1]][max_delta_idx] # The fragment actually reported to user
+            source_file = { 
+                'from': indices[to_fragment['from']['offset'] - prefix],
+                'to': indices[to_fragment['to']['offset'] + suffix]
+            }
 
             matches.append({
                 'this_file': this_file,
                 'source_file': source_file
             })
 
-        # TODO: add expansion of fragments by searching for longest prefix and 
-        # suffix similarly as it is done below for single fragment. Now there 
-        # might be more fragments in `f[fk[1]]` and ideally we would report the 
-        # longest match
-
-        # for f in fragments:
-        #     prefix_len = self.prefix_length(fk, f[0][0]['id'], f[1][0]['id'])
-        #     suffix_len = self.suffix_length(fk, f[0][-1]['id'], f[1][-1]['id'])
-
-        #     m = {}
-        #     for i in range(2):
-        #         start_offset = f[i][0]['offset'] - prefix_len
-        #         end_offset = f[i][-1]['offset'] + suffix_len + self.k - 1
-
-        #         m[fk[i]] = {
-        #             'from': self.cleaned_source[fk[i]]['indices'][start_offset],
-        #             'to': self.cleaned_source[fk[i]]['indices'][end_offset],
-        #         }
-
-        #     matches.append(m)
+            last_match_id = from_fragment['to']['offset'] + suffix
 
         return matches
 
@@ -522,10 +537,22 @@ class SID(object):
         :rtype: dict
         """
         clean_matches = []
+        file_lengths = {}
+
+        # Count file lines by opening each match only once. All matches are 
+        # bidirectional, and will be included in `matches`
+        for file in matches:
+            with open(file) as f:
+                for i, l in enumerate(f):
+                    pass
+            file_lengths[file] = i + 1
 
         for file, matched_files in matches.items():
             for idx, match in enumerate(matched_files):
-                match['similarity'] = self.get_similarity(file, match['indices'])
+                match['similarity'] = self.get_similarity(
+                    match['indices'], 
+                    file_lengths[file]
+                )
                 matched_files[idx] = match
 
             clean_matches.append({
@@ -538,18 +565,19 @@ class SID(object):
         }
 
 
-    def get_similarity(self, file, indices):
+    def get_similarity(self, indices, total_lines):
         """Method calculates similarity metrics among two files, given code 
             fragment matches from one file to another, assuming that `file` has 
             fragments copied from other source (this does not prove that the 
             code was acutally copied). Metrics like percentage match and matched 
             line counts are calculated.
         
-        :param file: File name for which the metrics should be calculated
-        :type file: str
         :param indices: List of matching fragments among the files, consisting 
             of list of borders where matches are found in original source files
         :type indices: list of dict
+        :param total_lines: Total number of lines in the file for which metrics 
+            are being calculated
+        :type total_lines: int
         :return: Similarity metrics among the files. These metrics are 
             one-directional, since the fragments matched can differ
         :rtype: dict
@@ -566,12 +594,6 @@ class SID(object):
             
             lines_matched += match['to']['line'] - match['from']['line']
             last_line = match['to']['line']
-
-        # Count total lines in the file
-        with open(file) as f:
-            for i, l in enumerate(f):
-                pass
-        total_lines = i + 1
         
         return {
             'percentage': lines_matched / total_lines,
