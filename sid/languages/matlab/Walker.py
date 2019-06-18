@@ -280,9 +280,9 @@ class SIDMatlabWalker(MATLABParserListener):
 
     # Enter a parse tree produced by MATLABParser#dotRef.
     def enterDotRef(self, ctx:MATLABParser.DotRefContext):
-        if ctx.DOT() is not None and ctx.DOT() != []:
-            self.add(APPLY, ctx.start)
-            # TODO: maybe `APPLY` should represent `(`
+        pass
+        # if ctx.DOT() is not None and ctx.DOT() != []:
+        #     self.add(APPLY, ctx.start)
 
     # Exit a parse tree produced by MATLABParser#dotRef.
     def exitDotRef(self, ctx:MATLABParser.DotRefContext):
@@ -495,7 +495,9 @@ class SIDMatlabWalker(MATLABParserListener):
 
     # Enter a parse tree produced by MATLABParser#expr.
     def enterExpr(self, ctx:MATLABParser.ExprContext):
-        pass
+        if ctx.LPAREN() is not None:
+            self.add(APPLY, ctx.start)
+        # TODO: either this or `enterDotRef`. maybe dotref should have own token
 
     # Exit a parse tree produced by MATLABParser#expr.
     def exitExpr(self, ctx:MATLABParser.ExprContext):

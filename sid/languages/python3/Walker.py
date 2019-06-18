@@ -806,8 +806,7 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#testlist_comp.
     def enterTestlist_comp(self, ctx:Python3Parser.Testlist_compContext):
-        if "," in ctx.getText():
-            self.add(ARRAY, ctx.start)
+        self.add(ARRAY, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#testlist_comp.
     def exitTestlist_comp(self, ctx:Python3Parser.Testlist_compContext):
@@ -816,10 +815,13 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#trailer.
     def enterTrailer(self, ctx:Python3Parser.TrailerContext):
-        if ctx.getText() != '' and ctx.getText()[0] == '(':
-            self.add(APPLY, ctx.start)
-        else:
-            self.add(ARRAY, ctx.start)
+        if ctx.getText() != '':
+            if ctx.getText()[0] == '(':
+                self.add(APPLY, ctx.start)
+            elif ctx.getText()[0] == '[':
+                self.add(ARRAY, ctx.start)
+            else:
+                pass # TODO: should we handle dot notation (self.x) ?
 
     # Exit a parse tree produced by Python3Parser#trailer.
     def exitTrailer(self, ctx:Python3Parser.TrailerContext):
