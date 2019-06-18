@@ -336,12 +336,10 @@ class SID(object):
         :rtype: list of dict
         """
         matches = []
-        last_match_id = 0
 
         for f in fragments:
             from_fragment = f[fk[0]] # The fragment actually reported to user
 
-            max_allowed_prefix = from_fragment['from']['offset'] - last_match_id
             max_delta_prefix = 0
             max_delta_suffix = 0
             max_delta_idx = None
@@ -349,11 +347,6 @@ class SID(object):
             for idx, candidate in enumerate(f[fk[1]]):
                 prefix = self.prefix_length(fk, from_fragment['from']['id'], 
                                                 candidate['from']['id'])
-                # Due to shorter fragments in the source file, matches in a 
-                # single file can overlap. This expression ensures that matches 
-                # do not overlap
-                prefix = min(prefix, max_allowed_prefix)
-
                 suffix = self.suffix_length(fk, from_fragment['to']['id'], 
                                                 candidate['to']['id'])
 
@@ -382,8 +375,6 @@ class SID(object):
                 'this_file': this_file,
                 'source_file': source_file
             })
-
-            last_match_id = from_fragment['to']['offset'] + suffix
 
         return matches
 
@@ -589,10 +580,14 @@ class SID(object):
             match = i['this_file']
             if match['from']['line'] > last_line:
                 # If this match starts on a different line than previous match 
-                # ended, add 1 line to the count
+                # ended, add 1 line to the count to account for the first line 
+                # of the match
                 lines_matched += 1
             
-            lines_matched += match['to']['line'] - match['from']['line']
+            # Account for overlapping matches and count each line only once
+            match_begin = max(match['from']['line'], last_line)
+            
+            lines_matched += match['to']['line'] - match_begin
             last_line = match['to']['line']
         
         return {
