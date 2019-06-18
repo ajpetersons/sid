@@ -23,7 +23,7 @@ class SIDPython3Walker(Python3Listener):
         self.tokens = []
 
 
-    def add_token(self, symbol, token):
+    def add(self, symbol, token):
         """Method records a found token that will be essential for 
             distinguishing logic in a program. This method does not return 
             anything, but formats the found token and saves it in the 
@@ -43,6 +43,38 @@ class SIDPython3Walker(Python3Listener):
         })
 
     
+    def add_end(self, symbol, token):
+        """Method records a found token that will be essential for 
+            distinguishing logic in a program. This method does not return 
+            anything, but formats the found token and saves it in the 
+            appropriate lists. This method append token that indicates the end 
+            of a structure, such as function definition. Due to ANTLR specifics, 
+            token location is returned the same as was for the beginning of the 
+            structure and match may have incorrect indices. This function 
+            remedies the fact by setting token indiceds to the location 
+            immediately after previous recorded token.
+        
+        :param symbol: The identifier for a found symbol, that represents a 
+            program control structure (built-in identifier)
+        :type symbol: int
+        :param token: ANTLR token that contains information about recorded 
+            symbol's location in the original source file
+        :type token: antlr4.Token.Token
+        """
+        prev_token = self.tokens[-1]
+
+        self.symbols.append(symbol)
+
+        new_token = {
+            'line': token.line,
+        }
+        new_token['col'] = token.column
+        if prev_token['line'] == token.line:
+            new_token['col'] = prev_token['col'] + 1
+            
+        self.tokens.append(new_token)
+
+
     def format(self, symbol):
         """Method maps a single Python 3 Language token onto human readable 
             string. Each token is mapped to a string without any spaces to be 
@@ -141,9 +173,9 @@ class SIDPython3Walker(Python3Listener):
         :type node: antlr4.tree.Tree.TerminalNode
         """
         if node.getText() == "=":
-            self.add_token(ASSIGN, node.getSymbol())
+            self.add(ASSIGN, node.getSymbol())
         elif node.getText() == "finally":
-            self.add_token(FINALLY, node.getSymbol())
+            self.add(FINALLY, node.getSymbol())
 
 
     """The following methods override Python3Listener methods that are called 
@@ -198,11 +230,11 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#decorated.
     def enterDecorated(self, ctx:Python3Parser.DecoratedContext):
-        self.add_token(DEC_BEGIN, ctx.start)
+        self.add(DEC_BEGIN, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#decorated.
     def exitDecorated(self, ctx:Python3Parser.DecoratedContext):
-        self.add_token(DEC_END, ctx.start)
+        self.add_end(DEC_END, ctx.stop)
 
 
     # Enter a parse tree produced by Python3Parser#async_funcdef.
@@ -216,11 +248,11 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#funcdef.
     def enterFuncdef(self, ctx:Python3Parser.FuncdefContext):
-        self.add_token(METHOD_BEGIN, ctx.start)
+        self.add(METHOD_BEGIN, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#funcdef.
     def exitFuncdef(self, ctx:Python3Parser.FuncdefContext):
-        self.add_token(METHOD_END, ctx.start)
+        self.add_end(METHOD_END, ctx.stop)
 
 
     # Enter a parse tree produced by Python3Parser#parameters.
@@ -324,7 +356,7 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#augassign.
     def enterAugassign(self, ctx:Python3Parser.AugassignContext):
-        self.add_token(ASSIGN, ctx.start)
+        self.add(ASSIGN, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#augassign.
     def exitAugassign(self, ctx:Python3Parser.AugassignContext):
@@ -333,7 +365,7 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#del_stmt.
     def enterDel_stmt(self, ctx:Python3Parser.Del_stmtContext):
-        self.add_token(DEL, ctx.start)
+        self.add(DEL, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#del_stmt.
     def exitDel_stmt(self, ctx:Python3Parser.Del_stmtContext):
@@ -360,7 +392,7 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#break_stmt.
     def enterBreak_stmt(self, ctx:Python3Parser.Break_stmtContext):
-        self.add_token(BREAK, ctx.start)
+        self.add(BREAK, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#break_stmt.
     def exitBreak_stmt(self, ctx:Python3Parser.Break_stmtContext):
@@ -369,7 +401,7 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#continue_stmt.
     def enterContinue_stmt(self, ctx:Python3Parser.Continue_stmtContext):
-        self.add_token(CONTINUE, ctx.start)
+        self.add(CONTINUE, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#continue_stmt.
     def exitContinue_stmt(self, ctx:Python3Parser.Continue_stmtContext):
@@ -378,7 +410,7 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#return_stmt.
     def enterReturn_stmt(self, ctx:Python3Parser.Return_stmtContext):
-        self.add_token(RETURN, ctx.start)
+        self.add(RETURN, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#return_stmt.
     def exitReturn_stmt(self, ctx:Python3Parser.Return_stmtContext):
@@ -387,7 +419,7 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#yield_stmt.
     def enterYield_stmt(self, ctx:Python3Parser.Yield_stmtContext):
-        self.add_token(YIELD, ctx.start)
+        self.add(YIELD, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#yield_stmt.
     def exitYield_stmt(self, ctx:Python3Parser.Yield_stmtContext):
@@ -396,7 +428,7 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#raise_stmt.
     def enterRaise_stmt(self, ctx:Python3Parser.Raise_stmtContext):
-        self.add_token(RAISE, ctx.start)
+        self.add(RAISE, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#raise_stmt.
     def exitRaise_stmt(self, ctx:Python3Parser.Raise_stmtContext):
@@ -405,7 +437,7 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#import_stmt.
     def enterImport_stmt(self, ctx:Python3Parser.Import_stmtContext):
-        self.add_token(IMPORT, ctx.start)
+        self.add(IMPORT, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#import_stmt.
     def exitImport_stmt(self, ctx:Python3Parser.Import_stmtContext):
@@ -495,7 +527,7 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#assert_stmt.
     def enterAssert_stmt(self, ctx:Python3Parser.Assert_stmtContext):
-        self.add_token(ASSERT, ctx.start)
+        self.add(ASSERT, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#assert_stmt.
     def exitAssert_stmt(self, ctx:Python3Parser.Assert_stmtContext):
@@ -522,34 +554,34 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#if_stmt.
     def enterIf_stmt(self, ctx:Python3Parser.If_stmtContext):
-        self.add_token(IF_BEGIN, ctx.start)
+        self.add(IF_BEGIN, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#if_stmt.
     def exitIf_stmt(self, ctx:Python3Parser.If_stmtContext):
-        self.add_token(IF_END, ctx.start)
+        self.add_end(IF_END, ctx.stop)
 
 
     # Enter a parse tree produced by Python3Parser#while_stmt.
     def enterWhile_stmt(self, ctx:Python3Parser.While_stmtContext):
-        self.add_token(WHILE_BEGIN, ctx.start)
+        self.add(WHILE_BEGIN, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#while_stmt.
     def exitWhile_stmt(self, ctx:Python3Parser.While_stmtContext):
-        self.add_token(WHILE_END, ctx.start)
+        self.add_end(WHILE_END, ctx.stop)
 
 
     # Enter a parse tree produced by Python3Parser#for_stmt.
     def enterFor_stmt(self, ctx:Python3Parser.For_stmtContext):
-        self.add_token(FOR_BEGIN, ctx.start)
+        self.add(FOR_BEGIN, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#for_stmt.
     def exitFor_stmt(self, ctx:Python3Parser.For_stmtContext):
-        self.add_token(FOR_END, ctx.start)
+        self.add_end(FOR_END, ctx.stop)
 
 
     # Enter a parse tree produced by Python3Parser#try_stmt.
     def enterTry_stmt(self, ctx:Python3Parser.Try_stmtContext):
-        self.add_token(TRY_BEGIN, ctx.start)
+        self.add(TRY_BEGIN, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#try_stmt.
     def exitTry_stmt(self, ctx:Python3Parser.Try_stmtContext):
@@ -558,11 +590,11 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#with_stmt.
     def enterWith_stmt(self, ctx:Python3Parser.With_stmtContext):
-        self.add_token(WITH_BEGIN, ctx.start)
+        self.add(WITH_BEGIN, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#with_stmt.
     def exitWith_stmt(self, ctx:Python3Parser.With_stmtContext):
-        self.add_token(WITH_END, ctx.start)
+        self.add_end(WITH_END, ctx.stop)
 
 
     # Enter a parse tree produced by Python3Parser#with_item.
@@ -576,11 +608,11 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#except_clause.
     def enterExcept_clause(self, ctx:Python3Parser.Except_clauseContext):
-        self.add_token(EXCEPT_BEGIN, ctx.start)
+        self.add(EXCEPT_BEGIN, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#except_clause.
     def exitExcept_clause(self, ctx:Python3Parser.Except_clauseContext):
-        self.add_token(EXCEPT_END, ctx.start)
+        self.add_end(EXCEPT_END, ctx.stop)
 
 
     # Enter a parse tree produced by Python3Parser#suite.
@@ -612,7 +644,7 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#lambdef.
     def enterLambdef(self, ctx:Python3Parser.LambdefContext):
-        self.add_token(LAMBDA, ctx.start)
+        self.add(LAMBDA, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#lambdef.
     def exitLambdef(self, ctx:Python3Parser.LambdefContext):
@@ -775,7 +807,7 @@ class SIDPython3Walker(Python3Listener):
     # Enter a parse tree produced by Python3Parser#testlist_comp.
     def enterTestlist_comp(self, ctx:Python3Parser.Testlist_compContext):
         if "," in ctx.getText():
-            self.add_token(ARRAY, ctx.start)
+            self.add(ARRAY, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#testlist_comp.
     def exitTestlist_comp(self, ctx:Python3Parser.Testlist_compContext):
@@ -785,9 +817,9 @@ class SIDPython3Walker(Python3Listener):
     # Enter a parse tree produced by Python3Parser#trailer.
     def enterTrailer(self, ctx:Python3Parser.TrailerContext):
         if ctx.getText() != '' and ctx.getText()[0] == '(':
-            self.add_token(APPLY, ctx.start)
+            self.add(APPLY, ctx.start)
         else:
-            self.add_token(ARRAY, ctx.start)
+            self.add(ARRAY, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#trailer.
     def exitTrailer(self, ctx:Python3Parser.TrailerContext):
@@ -841,7 +873,7 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#dictorsetmaker.
     def enterDictorsetmaker(self, ctx:Python3Parser.DictorsetmakerContext):
-        self.add_token(ARRAY, ctx.start)
+        self.add(ARRAY, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#dictorsetmaker.
     def exitDictorsetmaker(self, ctx:Python3Parser.DictorsetmakerContext):
@@ -850,11 +882,11 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#classdef.
     def enterClassdef(self, ctx:Python3Parser.ClassdefContext):
-        self.add_token(CLASS_BEGIN, ctx.start)
+        self.add(CLASS_BEGIN, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#classdef.
     def exitClassdef(self, ctx:Python3Parser.ClassdefContext):
-        self.add_token(CLASS_END, ctx.start)
+        self.add_end(CLASS_END, ctx.stop)
 
 
     # Enter a parse tree produced by Python3Parser#arglist.
@@ -922,7 +954,7 @@ class SIDPython3Walker(Python3Listener):
 
     # Enter a parse tree produced by Python3Parser#yield_arg.
     def enterYield_arg(self, ctx:Python3Parser.Yield_argContext):
-        self.add_token(YIELD, ctx.start)
+        self.add(YIELD, ctx.start)
 
     # Exit a parse tree produced by Python3Parser#yield_arg.
     def exitYield_arg(self, ctx:Python3Parser.Yield_argContext):

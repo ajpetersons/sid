@@ -23,7 +23,7 @@ class SIDMatlabWalker(MATLABParserListener):
         self.tokens = []
 
 
-    def add_token(self, symbol, token):
+    def add(self, symbol, token):
         """Method records a found token that will be essential for 
             distinguishing logic in a program. This method does not return 
             anything, but formats the found token and saves it in the 
@@ -41,6 +41,38 @@ class SIDMatlabWalker(MATLABParserListener):
             'line': token.line,
             'col': token.column
         })
+
+
+    def add_end(self, symbol, token):
+        """Method records a found token that will be essential for 
+            distinguishing logic in a program. This method does not return 
+            anything, but formats the found token and saves it in the 
+            appropriate lists. This method append token that indicates the end 
+            of a structure, such as function definition. Due to ANTLR specifics, 
+            token location is returned the same as was for the beginning of the 
+            structure and match may have incorrect indices. This function 
+            remedies the fact by setting token indiceds to the location 
+            immediately after previous recorded token.
+        
+        :param symbol: The identifier for a found symbol, that represents a 
+            program control structure (built-in identifier)
+        :type symbol: int
+        :param token: ANTLR token that contains information about recorded 
+            symbol's location in the original source file
+        :type token: antlr4.Token.Token
+        """
+        prev_token = self.tokens[-1]
+
+        self.symbols.append(symbol)
+
+        new_token = {
+            'line': token.line,
+        }
+        new_token['col'] = token.column
+        if prev_token['line'] == token.line:
+            new_token['col'] = prev_token['col'] + 1
+            
+        self.tokens.append(new_token)
 
     
     def format(self, symbol):
@@ -130,7 +162,7 @@ class SIDMatlabWalker(MATLABParserListener):
         :type node: antlr4.tree.Tree.TerminalNode
         """
         if node.getText() == "=":
-            self.add_token(ASSIGN, node.getSymbol())
+            self.add(ASSIGN, node.getSymbol())
 
 
     """The following methods override matlabListener methods that are called 
@@ -167,11 +199,11 @@ class SIDMatlabWalker(MATLABParserListener):
 
     # Enter a parse tree produced by MATLABParser#partialFunctionDecl.
     def enterPartialFunctionDecl(self, ctx:MATLABParser.PartialFunctionDeclContext):
-        self.add_token(FUNC_BEGIN, ctx.start)
+        self.add(FUNC_BEGIN, ctx.start)
 
     # Exit a parse tree produced by MATLABParser#partialFunctionDecl.
     def exitPartialFunctionDecl(self, ctx:MATLABParser.PartialFunctionDeclContext):
-        self.add_token(FUNC_END, ctx.start)
+        self.add_end(FUNC_END, ctx.stop)
 
 
     # Enter a parse tree produced by MATLABParser#functionDecl.
@@ -194,11 +226,11 @@ class SIDMatlabWalker(MATLABParserListener):
 
     # Enter a parse tree produced by MATLABParser#classDecl.
     def enterClassDecl(self, ctx:MATLABParser.ClassDeclContext):
-        self.add_token(CLASS_BEGIN, ctx.start)
+        self.add(CLASS_BEGIN, ctx.start)
 
     # Exit a parse tree produced by MATLABParser#classDecl.
     def exitClassDecl(self, ctx:MATLABParser.ClassDeclContext):
-        self.add_token(CLASS_END, ctx.start)
+        self.add_end(CLASS_END, ctx.stop)
 
 
     # Enter a parse tree produced by MATLABParser#propBlockDecl.
@@ -249,7 +281,7 @@ class SIDMatlabWalker(MATLABParserListener):
     # Enter a parse tree produced by MATLABParser#dotRef.
     def enterDotRef(self, ctx:MATLABParser.DotRefContext):
         if ctx.DOT() is not None and ctx.DOT() != []:
-            self.add_token(APPLY, ctx.start)
+            self.add(APPLY, ctx.start)
             # TODO: maybe `APPLY` should represent `(`
 
     # Exit a parse tree produced by MATLABParser#dotRef.
@@ -268,43 +300,43 @@ class SIDMatlabWalker(MATLABParserListener):
 
     # Enter a parse tree produced by MATLABParser#ifStat.
     def enterIfStat(self, ctx:MATLABParser.IfStatContext):
-        self.add_token(IF_BEGIN, ctx.start)
+        self.add(IF_BEGIN, ctx.start)
 
     # Exit a parse tree produced by MATLABParser#ifStat.
     def exitIfStat(self, ctx:MATLABParser.IfStatContext):
-        self.add_token(IF_END, ctx.start)
+        self.add(IF_END, ctx.stop)
 
 
     # Enter a parse tree produced by MATLABParser#whileStat.
     def enterWhileStat(self, ctx:MATLABParser.WhileStatContext):
-        self.add_token(WHILE_BEGIN, ctx.start)
+        self.add(WHILE_BEGIN, ctx.start)
 
     # Exit a parse tree produced by MATLABParser#whileStat.
     def exitWhileStat(self, ctx:MATLABParser.WhileStatContext):
-        self.add_token(WHILE_END, ctx.start)
+        self.add_end(WHILE_END, ctx.stop)
 
 
     # Enter a parse tree produced by MATLABParser#forStat.
     def enterForStat(self, ctx:MATLABParser.ForStatContext):
-        self.add_token(FOR_BEGIN, ctx.start)
+        self.add(FOR_BEGIN, ctx.start)
 
     # Exit a parse tree produced by MATLABParser#forStat.
     def exitForStat(self, ctx:MATLABParser.ForStatContext):
-        self.add_token(FOR_END, ctx.start)
+        self.add_end(FOR_END, ctx.stop)
 
 
     # Enter a parse tree produced by MATLABParser#switchStat.
     def enterSwitchStat(self, ctx:MATLABParser.SwitchStatContext):
-        self.add_token(SWITCH_BEGIN, ctx.start)
+        self.add(SWITCH_BEGIN, ctx.start)
 
     # Exit a parse tree produced by MATLABParser#switchStat.
     def exitSwitchStat(self, ctx:MATLABParser.SwitchStatContext):
-        self.add_token(SWITCH_END, ctx.start)
+        self.add_end(SWITCH_END, ctx.stop)
 
 
     # Enter a parse tree produced by MATLABParser#caseStat.
     def enterCaseStat(self, ctx:MATLABParser.CaseStatContext):
-        self.add_token(CASE, ctx.start)
+        self.add(CASE, ctx.start)
 
     # Exit a parse tree produced by MATLABParser#caseStat.
     def exitCaseStat(self, ctx:MATLABParser.CaseStatContext):
@@ -313,7 +345,7 @@ class SIDMatlabWalker(MATLABParserListener):
 
     # Enter a parse tree produced by MATLABParser#otherwiseStat.
     def enterOtherwiseStat(self, ctx:MATLABParser.OtherwiseStatContext):
-        self.add_token(CASE, ctx.start)
+        self.add(CASE, ctx.start)
 
     # Exit a parse tree produced by MATLABParser#otherwiseStat.
     def exitOtherwiseStat(self, ctx:MATLABParser.OtherwiseStatContext):
@@ -323,11 +355,11 @@ class SIDMatlabWalker(MATLABParserListener):
     # Enter a parse tree produced by MATLABParser#jumpStat.
     def enterJumpStat(self, ctx:MATLABParser.JumpStatContext):
         if ctx.BREAK() is not None:
-            self.add_token(BREAK, ctx.start)
+            self.add(BREAK, ctx.start)
         elif ctx.CONTINUE() is not None:
-            self.add_token(CONTINUE, ctx.start)
+            self.add(CONTINUE, ctx.start)
         elif ctx.RETURN() is not None:
-            self.add_token(RETURN, ctx.start)
+            self.add(RETURN, ctx.start)
 
     # Exit a parse tree produced by MATLABParser#jumpStat.
     def exitJumpStat(self, ctx:MATLABParser.JumpStatContext):
@@ -345,7 +377,7 @@ class SIDMatlabWalker(MATLABParserListener):
 
     # Enter a parse tree produced by MATLABParser#arrayExpr.
     def enterArrayExpr(self, ctx:MATLABParser.ArrayExprContext):
-        self.add_token(ARRAY, ctx.start)
+        self.add(ARRAY, ctx.start)
 
     # Exit a parse tree produced by MATLABParser#arrayExpr.
     def exitArrayExpr(self, ctx:MATLABParser.ArrayExprContext):
@@ -354,7 +386,7 @@ class SIDMatlabWalker(MATLABParserListener):
 
     # Enter a parse tree produced by MATLABParser#cellExpr.
     def enterCellExpr(self, ctx:MATLABParser.CellExprContext):
-        self.add_token(ARRAY, ctx.start)
+        self.add(ARRAY, ctx.start)
 
     # Exit a parse tree produced by MATLABParser#cellExpr.
     def exitCellExpr(self, ctx:MATLABParser.CellExprContext):
@@ -445,7 +477,7 @@ class SIDMatlabWalker(MATLABParserListener):
     # Enter a parse tree produced by MATLABParser#transposeExpr.
     def enterTransposeExpr(self, ctx:MATLABParser.TransposeExprContext):
         if ctx.TRANS() is not None or ctx.CTRANS() is not None:
-            self.add_token(TRANSPOSE, ctx.start)
+            self.add(TRANSPOSE, ctx.start)
 
     # Exit a parse tree produced by MATLABParser#transposeExpr.
     def exitTransposeExpr(self, ctx:MATLABParser.TransposeExprContext):

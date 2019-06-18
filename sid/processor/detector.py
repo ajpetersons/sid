@@ -357,7 +357,7 @@ class SID(object):
                 suffix = self.suffix_length(fk, from_fragment['to']['id'], 
                                                 candidate['to']['id'])
 
-                if max_delta_prefix + max_delta_suffix < prefix + suffix:
+                if max_delta_prefix + max_delta_suffix <= prefix + suffix:
                     max_delta_prefix = prefix
                     max_delta_suffix = suffix
                     max_delta_idx = idx
