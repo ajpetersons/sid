@@ -1,0 +1,72 @@
+$padding: 20px;
+$border: 2px;
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  
+  .cell {
+    margin: $padding;
+    display: flex;
+    flex-direction: column;
+    flex-basis: 50%;
+    flex: 1;
+  }
+  
+  &.header {
+    height: 250px;
+
+    .cell {
+      height: calc(100% - #{$padding});
+    }
+  }
+  
+  &.code {
+
+    .cell {
+      padding: $padding;
+      min-width: 0;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: scroll;
+      border: $border solid #111111;
+
+      &.left {
+        margin-right: 0;
+      }
+
+      &.right {
+      }
+    }
+
+    pre.prettyprint {
+      display: block;
+      overflow: auto;
+      width: auto;
+      white-space: pre;
+      word-wrap: normal;
+      padding: 10px;   
+    }
+
+    pre {
+      margin: 0;
+      border: none;
+
+      .line {
+        display: block;
+        padding-bottom: 2px;
+
+        &.similar {
+          background-color: #f6fbcd;
+          
+          &.focus {
+            background-color: #ffa8a8;
+          }
+        }
+      }
+    }
+  }
+}
+
+@import "./header.scss";
