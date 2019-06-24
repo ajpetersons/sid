@@ -1,4 +1,5 @@
 import logging
+import json
 import click
 
 from sid.cmd.context import Context
@@ -45,10 +46,10 @@ def cli(ctx):
 @click.option('--window', '-w', default=10, show_default=True, 
     help='Window size for fingerprint spacing. This is the length of longest ' +
          'match that should not go unnoticed')
-@click.option('--json / --no-json', default=False, 
+@click.option('--json / --no-json', 'print_json', default=False, 
     help='Output similarity detection results in JSON format instead of ' +
          'prettified text')
-def compare(ctx, language, file, ignore, fingerprint_size, window, json):
+def compare(ctx, language, file, ignore, fingerprint_size, window, print_json):
     """The main command of the software - this function handles similarity 
         detection when called from command line. The function initializes 
         similarity detector with all proper arguments and runs the detectio. 
@@ -72,8 +73,8 @@ def compare(ctx, language, file, ignore, fingerprint_size, window, json):
     :type fingerprint_size: int
     :param window: Window size for fingerprint spacing
     :type window: int
-    :param json: Indicator if output should be formatted or raw JSON
-    :type json: boolean
+    :param print_json: Indicator if output should be formatted or raw JSON
+    :type print_json: boolean
     :raises e: This function catches error from detector instance creation, and 
         raises the error again for debugging if verbosity is enabled
     """
@@ -100,8 +101,8 @@ def compare(ctx, language, file, ignore, fingerprint_size, window, json):
 
     matches = s.detect_pairwise(file, ignore)
 
-    if json:
-        print(matches)
+    if print_json:
+        print(json.dumps(matches))
     else:
         format_matches(matches)
 

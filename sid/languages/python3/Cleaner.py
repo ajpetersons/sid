@@ -31,7 +31,7 @@ class Python3Cleaner(LanguageCleaner):
             of the characters in the original files as a list
         :rtype: tuple of str and list of dict
         """
-        contents = FileStream(file)
+        contents = FileStream(file, encoding='utf8')
         lexer = Python3Lexer(contents)
         stream = CommonTokenStream(lexer)
         parser = Python3Parser(stream)
