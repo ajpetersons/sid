@@ -1,58 +1,7 @@
-let text = `?
-this is a very long line, much much longer than a line of code should ever be. Maybe I am overdoing this? probably, I wouldnt be speaking with myself otherwise
-is 
-multiple
-lines
-this is a very long line, much much longer than a line of code should ever be. Maybe I am overdoing this? probably, I wouldnt be speaking with myself otherwise
-is 
-multiple
-lines
-this is a very long line, much much longer than a line of code should ever be. Maybe I am overdoing this? probably, I wouldnt be speaking with myself otherwise
-is 
-multiple
-lines
-this is a very long line, much much longer than a line of code should ever be. Maybe I am overdoing this? probably, I wouldnt be speaking with myself otherwise
-is 
-multiple
-lines
-this is a very long line, much much longer than a line of code should ever be. Maybe I am overdoing this? probably, I wouldnt be speaking with myself otherwise
-is 
-multiple
-lines
-`; // TODO: Init properly
+const this_file_text = `{{ this_file_text }}`; // TODO: rename
+const source_file_text = `{{ source_file_text }}`; // TODO: rename
 
-let indices = [
-    {
-        "this_file": {
-            "from": { "line": 2, "col": 4 },
-            "to": { "line": 2, "col": 4 }
-        },
-        "source_file": {
-            "from": { "line": 4, "col": 4 },
-            "to": { "line": 5, "col": 4 }
-        }
-    },
-    {
-        "this_file": {
-            "from": { "line": 3, "col": 4 },
-            "to": { "line": 4, "col": 4 }
-        },
-        "source_file": {
-            "from": { "line": 6, "col": 17 },
-            "to": { "line": 6, "col": 4 }
-        }
-    },
-    {
-        "this_file": {
-            "from": { "line": 10, "col": 4 },
-            "to": { "line": 14, "col": 4 }
-        },
-        "source_file": {
-            "from": { "line": 10, "col": 17 },
-            "to": { "line": 14, "col": 4 }
-        }
-    }
-]; // TODO: Init properly
+const rawIndices = `{{ indices }}`; // TODO: rename
 
 let this_file_container = undefined; // TODO: rename
 let source_file_container = undefined; // TODO: rename
@@ -83,11 +32,11 @@ let renderFragments = (fragments) => {
     container.empty();
 
     for (let i = 0; i < fragments.length; i++) {
-        let from = fragments[i].this_file.from.line;
-        let to = fragments[i].this_file.to.line;
+        let { from, to } = fragments[i].this_file || {};
+
         let fragment = $("<div></div>").addClass("fragment");
         let link = $("<a></a>").click(loadFragment(fragments[i]))
-            .text(`Fragment ${i+1}  [Lines ${from} - ${to}]`);
+            .text(`Fragment ${i+1}  [Lines ${from.line} - ${to.line}]`);
         fragment.append(link);
         container.append(fragment);
     }
@@ -99,6 +48,13 @@ let loadFragment = fragment => () => {
 };
 
 $(document).ready(() => {
+    let indices = [];
+    try {
+        indices = JSON.parse(rawIndices);
+    } catch(e) {
+        console.log(e);
+    }
+
     this_file_container = $("div.code > .left > pre");
     source_file_container = $("div.code > .right > pre");
 
@@ -109,8 +65,8 @@ $(document).ready(() => {
         source_file_similarLines.push(indices[i].source_file);
     }
 
-    printLines(text, this_file_container, this_file_similarLines, {});
-    printLines(text, source_file_container, source_file_similarLines, {});
+    printLines(this_file_text, this_file_container, this_file_similarLines, {});
+    printLines(source_file_text, source_file_container, source_file_similarLines, {});
 });
 
 let inRange = (value, range) => {
