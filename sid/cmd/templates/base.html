@@ -9,14 +9,14 @@
         <div class="row header">
             <div class="cell left">
                 <div class="info">
-                    <span class="left">File 1</span>
-                    <span class="right">{{filename}}</span>
-                    <span class="right score">[{{similarity}} | {{lines}}]</span>
+                    <span class="left">Submission file</span>
+                    <span class="right">{{ current.file }}</span>
+                    <span class="right score">[{{ current.similarity }} | {{ current.lines }}]</span>
                 </div>
                 <div class="info">
-                    <span class="left">File 2</span>
-                    <span class="right">{{filename}}</span>
-                    <span class="right score">[{{similarity}} | {{lines}}]</span>
+                    <span class="left">Potential source file</span>
+                    <span class="right">{{ source.file }}</span>
+                    <span class="right score">[{{ source.similarity }} | {{ source.lines }}]</span>
                 </div>
             </div>
             <div class="cell right">

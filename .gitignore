@@ -260,3 +260,6 @@ test/
 javascript
 # Exclude incomplete matlab walker
 .matlab
+
+# Exclude HTML build artifacts
+compiled

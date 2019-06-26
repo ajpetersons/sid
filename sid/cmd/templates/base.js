@@ -1,12 +1,12 @@
-const this_file_text = `{{ this_file_text }}`; // TODO: rename
-const source_file_text = `{{ source_file_text }}`; // TODO: rename
+const currentText = `{{ current.text }}`;
+const sourceText = `{{ source.text }}`;
 
-const rawIndices = `{{ indices }}`; // TODO: rename
+const rawIndices = `{{ indices }}`; 
 
-let this_file_container = undefined; // TODO: rename
-let source_file_container = undefined; // TODO: rename
-let this_file_similarLines = []; // TODO: rename
-let source_file_similarLines = []; // TODO: rename
+let currentContainer = undefined;
+let sourceContainer = undefined;
+let currentSimilarLines = [];
+let sourceSimilarLines = [];
 
 let printLines = (source, targetElement, similarLines, hihghlightedLines) => {
     targetElement.empty();
@@ -43,30 +43,31 @@ let renderFragments = (fragments) => {
 };
 
 let loadFragment = fragment => () => {
-    printLines(text, this_file_container, this_file_similarLines, fragment.this_file);
-    printLines(text, source_file_container, source_file_similarLines, fragment.source_file);
+    printLines(text, currentContainer, currentSimilarLines, fragment.this_file);
+    printLines(text, sourceContainer, sourceSimilarLines, fragment.source_file);
 };
 
 $(document).ready(() => {
     let indices = [];
     try {
+        // To avoid JS parse errors, we inject indices as text and then convert to JSON array
         indices = JSON.parse(rawIndices);
     } catch(e) {
         console.log(e);
     }
 
-    this_file_container = $("div.code > .left > pre");
-    source_file_container = $("div.code > .right > pre");
+    currentContainer = $("div.code > .left > pre");
+    sourceContainer = $("div.code > .right > pre");
 
     renderFragments(indices);
 
     for (let i = 0; i < indices.length; i++) {
-        this_file_similarLines.push(indices[i].this_file);
-        source_file_similarLines.push(indices[i].source_file);
+        currentSimilarLines.push(indices[i].this_file);
+        sourceSimilarLines.push(indices[i].source_file);
     }
 
-    printLines(this_file_text, this_file_container, this_file_similarLines, {});
-    printLines(source_file_text, source_file_container, source_file_similarLines, {});
+    printLines(currentText, currentContainer, currentSimilarLines, {});
+    printLines(sourceText, sourceContainer, sourceSimilarLines, {});
 });
 
 let inRange = (value, range) => {

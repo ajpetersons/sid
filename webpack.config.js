@@ -2,12 +2,11 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const HtmlWebpackInlineSourcePlugin = require('html-webpack-inline-source-plugin');
 const webpack = require('webpack');
-
-
+const path = require('path');
  
 module.exports = {
   mode: 'production',
-  context: __dirname + "/sid/cmd/templates",
+  context: path.resolve(__dirname, "sid", "cmd", "templates"),
   entry: ['./base.js', './base.scss'],
   plugins: [
     new webpack.ProvidePlugin({
@@ -25,7 +24,7 @@ module.exports = {
     new HtmlWebpackInlineSourcePlugin(),
   ],
   output: {
-    publicPath: 'index.html'
+    path: path.resolve(__dirname, "sid", "cmd", "templates", "compiled")
   },
   module: {
     rules: [
