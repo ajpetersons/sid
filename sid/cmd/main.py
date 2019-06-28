@@ -46,10 +46,10 @@ def cli(ctx):
 @click.option('--window', '-w', default=10, show_default=True, 
     help='Window size for fingerprint spacing. This is the length of longest ' +
          'match that should not go unnoticed')
-@click.option('--json / --no-json', 'print_json', default=False, 
-    help='Output similarity detection results in JSON format instead of ' +
-         'prettified text')
-def compare(ctx, language, file, ignore, fingerprint_size, window, print_json):
+@click.option('--output', default=None,
+    help='Directory to save report HTML files. If this is not provided, a ' +
+         'JSON output will be presented')
+def compare(ctx, language, file, ignore, fingerprint_size, window, output):
     """The main command of the software - this function handles similarity 
         detection when called from command line. The function initializes 
         similarity detector with all proper arguments and runs the detectio. 
@@ -73,10 +73,12 @@ def compare(ctx, language, file, ignore, fingerprint_size, window, print_json):
     :type fingerprint_size: int
     :param window: Window size for fingerprint spacing
     :type window: int
-    :param print_json: Indicator if output should be formatted or raw JSON
-    :type print_json: boolean
-    :raises e: This function catches error from detector instance creation, and 
-        raises the error again for debugging if verbosity is enabled
+    :param output: Directory to save report HTML files. If this is not provided,
+        a JSON output will be presented
+    :type output: str
+    :raises exception: This function catches error from detector instance 
+        creation, and raises the error again for debugging if verbosity is 
+        enabled
     """
     c = ctx.ensure_object(Context)
 
@@ -101,10 +103,10 @@ def compare(ctx, language, file, ignore, fingerprint_size, window, print_json):
 
     matches = s.detect_pairwise(file, ignore)
 
-    if print_json:
+    if output is None:
         print(json.dumps(matches))
     else:
-        format_matches(matches)
+        format_matches(matches, output)
 
 
 @cli.command(help='Print information about SID')
@@ -168,12 +170,11 @@ There are multiple parameters that can be configured for SID command line tool:
         all possible consecutive fragments (of fixed length) of k-grams. Window 
         size also represents the maximum interval between two consecutive 
         fingerprints.
-  JSON results: 
-        By setting this parameter, similarity results can be retrieved in JSON 
-        format for further processing in GUI tools or other methods. By default 
-        SID outputs the results in a prettified format after completing 
-        detection. Unfortunately formatting is not yet implemented, so JSON 
-        output is returned always.
+  Output: 
+        By setting this parameter, output directory can be specified, where HTML 
+        reports will be stored after similarity detection is finished. If this 
+        parameter is left untouched, results in JSON format will be printed 
+        which can be used for further processing in GUI tools or other methods.
 
 One parameter, however, is enabled by default in source code level - use of 
 robust Winnowing algorithm. This parameter controls fingerprint selection 

@@ -5,12 +5,14 @@ import json
 from jinja2 import Environment, FileSystemLoader
 
 
-def format_matches(matches):
+def format_matches(matches, dir):
     """Function receives similarity detection and returns user friendly results 
         of similarity detection.
     
     :param matches: Similarity detection results in JSON format
     :type matches: dict
+    :param dir: Directory to save report files in
+    :type dir: str
     """
     
     templates_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 
@@ -21,9 +23,9 @@ def format_matches(matches):
     template = env.get_template("index.html")
 
     # Results directory is cleared, if it exists, and then created
-    if os.path.exists("results"):
-        shutil.rmtree("results")
-    os.mkdir("results")
+    if os.path.exists(dir):
+        shutil.rmtree(dir)
+    os.mkdir(dir)
 
     res_file_idx = 0
     for result in matches["match_results"]:
@@ -49,8 +51,9 @@ def format_matches(matches):
             indices = source["indices"]
             output = template.render(current=this_file, source=source_file, 
                                      indices=indices)
-            with open("results/match_{}.html".format(res_file_idx), "w") as f:
-                f.write(output)
+            report_file = open(
+                os.path.join(dir, "match_{}.html".format(res_file_idx)), "w")
+            report_file.write(output)
             res_file_idx += 1
 
 
