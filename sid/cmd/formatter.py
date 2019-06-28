@@ -51,8 +51,9 @@ def format_matches(matches, dir):
             indices = source["indices"]
             output = template.render(current=this_file, source=source_file, 
                                      indices=indices)
-            report_file = open(
-                os.path.join(dir, "match_{}.html".format(res_file_idx)), "w")
+            res_path = os.path.join(dir, "match_{}.html".format(res_file_idx))
+            logging.debug('Compiling result file {}'.format(res_path))
+            report_file = open(res_path, "w")
             report_file.write(output)
             res_file_idx += 1
 
