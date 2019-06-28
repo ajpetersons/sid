@@ -2,6 +2,12 @@
 <html>
 <head>
     <title>SID results</title>
+    <script type="text/javascript">
+        var currentText = {{ current.text }};
+        var sourceText = {{ source.text }};
+
+        var indices = {{ indices | tojson }}; 
+    </script>
 </head>
 
 <body>
@@ -11,12 +17,18 @@
                 <div class="info">
                     <span class="left">Submission file</span>
                     <span class="right">{{ current.file }}</span>
-                    <span class="right score">[{{ current.similarity }} | {{ current.lines }}]</span>
+                    <span class="right score">
+                        [{{ '%0.2f'| format(current.similarity|float) }}% | 
+                        {{ current.lines }} lines]
+                    </span>
                 </div>
                 <div class="info">
                     <span class="left">Potential source file</span>
                     <span class="right">{{ source.file }}</span>
-                    <span class="right score">[{{ source.similarity }} | {{ source.lines }}]</span>
+                    <span class="right score">
+                        [{{ '%0.2f'| format(source.similarity|float) }}% | 
+                        {{ source.lines }} lines]
+                    </span>
                 </div>
             </div>
             <div class="cell right">

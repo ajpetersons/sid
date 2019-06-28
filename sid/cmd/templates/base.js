@@ -1,10 +1,3 @@
-const currentText = `{{ current.text }}`;
-const sourceText = `{{ source.text }}`;
-
-// To avoid JS parse errors, we inject indices as text and then convert to JSON
-// array
-const rawIndices = `{{ indices }}`; 
-
 // Init placeholder values, to be initialized after document has finished 
 // loading.
 let currentContainer = undefined;
@@ -85,20 +78,11 @@ let renderFragments = (fragments) => {
  */
 let loadFragment = fragment => () => {
     // Re-render both code containers with new highlighted fragment
-    printLines(text, currentContainer, currentSimilarLines, fragment.this_file);
-    printLines(text, sourceContainer, sourceSimilarLines, fragment.source_file);
+    printLines(currentText, currentContainer, currentSimilarLines, fragment.this_file);
+    printLines(sourceText, sourceContainer, sourceSimilarLines, fragment.source_file);
 };
 
 $(document).ready(() => {
-    let indices = [];
-    try {
-        // To avoid JS parse errors, we inject indices as text and then convert 
-        // to JSON array
-        indices = JSON.parse(rawIndices);
-    } catch(e) {
-        console.log(e);
-    }
-
     // Init code fragment container selectors
     currentContainer = $("div.code > .left > pre");
     sourceContainer = $("div.code > .right > pre");
