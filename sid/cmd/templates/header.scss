@@ -21,7 +21,24 @@
 
     &.score {
       padding-left: 10px;
+
+      .lines-matched::before {
+        content: "| ";
+      }
+
+      &::before {
+        content: "[";
+      }
+
+      &::after {
+        content: "]";
+      }
     }
+  }
+
+  > div {
+    max-width: 500px;
+    word-wrap: break-word;
   }
 }
 

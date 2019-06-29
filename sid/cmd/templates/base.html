@@ -14,21 +14,25 @@
     <div class="content">
         <div class="row header">
             <div class="cell left">
-                <div class="info">
-                    <span class="left">Submission file</span>
-                    <span class="right">{{ current.file }}</span>
-                    <span class="right score">
-                        [{{ '%0.2f'| format(current.similarity|float) }}% | 
-                        {{ current.lines }} lines]
-                    </span>
+                <div class="info" id="targetFile">
+                    <div class="left">Submission file</div>
+                    <div class="right name">{{ current.file }}</div>
+                    <div class="right score">
+                        <span class="similarity">
+                            {{ '%0.2f'| format(current.similarity|float) }}%
+                        </span>
+                        <span class="lines-matched">{{ current.lines }}</span>
+                    </div>
                 </div>
-                <div class="info">
-                    <span class="left">Potential source file</span>
-                    <span class="right">{{ source.file }}</span>
-                    <span class="right score">
-                        [{{ '%0.2f'| format(source.similarity|float) }}% | 
-                        {{ source.lines }} lines]
-                    </span>
+                <div class="info" id="sourceFile">
+                    <div class="left">Potential source file</div>
+                    <div class="right name">{{ source.file }}</div>
+                    <div class="right score">
+                        <span class="similarity">
+                            {{ '%0.2f'| format(source.similarity|float) }}%
+                        </span>
+                        <span class="lines-matched">{{ source.lines }}</span>
+                    </div>
                 </div>
             </div>
             <div class="cell right">
