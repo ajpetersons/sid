@@ -52,11 +52,11 @@ for each window in the code, with windows covering all possible consecutive
 fragments (of fixed length) of k-grams. Window size also represents the maximum 
 interval between two consecutive fingerprints.
 
-### JSON results: 
-By setting this parameter, similarity results can be retrieved in JSON format 
-for further processing in GUI tools or other methods. By default SID outputs the 
-results in a prettified format after completing detection. Unfortunately 
-formatting is not yet implemented, so JSON output is returned always.
+### Output directory: 
+By setting this parameter, output directory can be specified, where HTML reports 
+will be stored after similarity detection is finished. If this parameter is left 
+untouched, results in JSON format will be printed which can be used for further 
+processing in GUI tools or other methods.
 
 One parameter, however, is enabled by default in source code level - use of 
 robust Winnowing algorithm. This parameter controls fingerprint selection 
@@ -109,3 +109,18 @@ token list. The only thing that has to be changed is root node decalaration:
 `tree = parser.rootNode()`
 - Add the new language to Parser getter and update any global non-code 
 references to language lists
+
+### Setting up for reports development
+
+Report files are developed using generic HTML/JS/CSS methods with 
+[Jinja](http://jinja.pocoo.org/) variable injection to supply the data. For 
+simpler work flow, SASS syntax is used instead of plain CSS, which is compiled 
+before running. Additionally, for simpler report distribution, all resources are 
+compiled into a single file that is then used as a template for the actual 
+reports. To compile SASS and compress files, Webpack is used. 
+
+Setting up:
+
+- Download and install [Node.js](https://nodejs.org/en/download/)
+- Install `npm` dependencies by running `npm install`
+- Compile the files by running `./node_modules/webpack/bin/webpack.js`
