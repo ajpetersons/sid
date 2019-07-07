@@ -128,6 +128,11 @@ class Fingerprint(object):
         for i in range(init_hash_length): 
             self.hash = ((self.hash + ord(self.source[i])) * self.d) % self.q
 
+        if init_hash_length == 0:
+            # If the source is empty, loop will not have worked, return -1 to 
+            # terminate
+            self.hash = -1
+
         return self.hash
 
     
