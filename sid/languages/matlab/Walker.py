@@ -366,6 +366,15 @@ class SIDMatlabWalker(MATLABParserListener):
         pass
 
 
+    # Enter a parse tree produced by MATLABParser#clearStat.
+    def enterClearStat(self, ctx:MATLABParser.ClearStatContext):
+        pass
+
+    # Exit a parse tree produced by MATLABParser#clearStat.
+    def exitClearStat(self, ctx:MATLABParser.ClearStatContext):
+        pass
+
+
     # Enter a parse tree produced by MATLABParser#stat.
     def enterStat(self, ctx:MATLABParser.StatContext):
         return
@@ -495,12 +504,19 @@ class SIDMatlabWalker(MATLABParserListener):
 
     # Enter a parse tree produced by MATLABParser#expr.
     def enterExpr(self, ctx:MATLABParser.ExprContext):
-        if ctx.LPAREN() is not None:
-            self.add(APPLY, ctx.start)
-        # TODO: either this or `enterDotRef`. maybe dotref should have own token
+        pass
 
     # Exit a parse tree produced by MATLABParser#expr.
     def exitExpr(self, ctx:MATLABParser.ExprContext):
+        pass
+
+
+    # Enter a parse tree produced by MATLABParser#funcExpr.
+    def enterFuncExpr(self, ctx:MATLABParser.FuncExprContext):
+        self.add(APPLY, ctx.start)
+
+    # Exit a parse tree produced by MATLABParser#funcExpr.
+    def exitFuncExpr(self, ctx:MATLABParser.FuncExprContext):
         pass
 
 

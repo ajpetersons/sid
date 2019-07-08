@@ -64,7 +64,9 @@ prop
     ;
 
 dotRef
-    : ID (DOT ID)*
+    : FUNC_HANDLE? ID (DOT ID)* (LBRACE expr RBRACE)?
+    | LBRACK ID (COMMA ID)* RBRACK
+    | END // can be a valid token in some cases
     ;
 
 statBlock
@@ -103,18 +105,24 @@ otherwiseStat
     ;
 
 jumpStat
-   : BREAK endStat
-   | CONTINUE endStat
-   | RETURN endStat
-   ;
+    : BREAK endStat
+    | CONTINUE endStat
+    | RETURN endStat
+    ;
+
+clearStat
+    : CLEAR ID ID*
+    ;
 
 stat
     : dotRef EQUALS expr
+    | funcExpr EQUALS expr
     | ifStat
     | whileStat
     | forStat
     | switchStat
     | jumpStat
+    | clearStat
     | expr 
     | NL
     ;
@@ -122,12 +130,16 @@ stat
 expr
 // https://uk.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
     : exprList
-    | LPAREN exprList RPAREN
-    | expr LPAREN exprList RPAREN
+    ;
+
+funcExpr
+    : dotRef exprList
     ;
 
 exprList
-    : listExpr (',' listExpr)*
+    : LPAREN listExpr (COMMA listExpr)* RPAREN
+    | LPAREN RPAREN
+    | listExpr (COMMA listExpr)*
     ;
 
 listExpr
@@ -137,13 +149,11 @@ listExpr
     ;
 
 arrayExpr
-    : LBRACK exprArrayList RBRACK
-    | LBRACK RBRACK
+    : LBRACK exprArrayList? RBRACK
     ;
 
 cellExpr
-    : LBRACE exprArrayList RBRACE
-    | LBRACE RBRACE
+    : LBRACE exprArrayList? RBRACE
     ;
 
 logicExpr
@@ -179,7 +189,8 @@ transposeExpr
     ;
 
 basicExpr
-    : dotRef
+    : funcExpr
+    | dotRef
     | INT | FLOAT | SCI
     | STRING
     ;

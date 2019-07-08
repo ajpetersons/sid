@@ -33,6 +33,8 @@ CONTINUE : 'continue' ;
 
 RETURN : 'return' ;
 
+CLEAR : 'clear' ;
+
 // Symbols
 EQUALS : '=' ;
 
@@ -95,6 +97,8 @@ COLON : ':' ;
 TRANS : '.\'' ;
 
 CTRANS : '\'' ;
+
+FUNC_HANDLE : '@' ;
 
 // General rules
 NL  : '\r'?'\n' ;

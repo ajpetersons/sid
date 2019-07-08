@@ -197,6 +197,15 @@ class MATLABParserListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by MATLABParser#clearStat.
+    def enterClearStat(self, ctx:MATLABParser.ClearStatContext):
+        pass
+
+    # Exit a parse tree produced by MATLABParser#clearStat.
+    def exitClearStat(self, ctx:MATLABParser.ClearStatContext):
+        pass
+
+
     # Enter a parse tree produced by MATLABParser#stat.
     def enterStat(self, ctx:MATLABParser.StatContext):
         pass
@@ -212,6 +221,15 @@ class MATLABParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by MATLABParser#expr.
     def exitExpr(self, ctx:MATLABParser.ExprContext):
+        pass
+
+
+    # Enter a parse tree produced by MATLABParser#funcExpr.
+    def enterFuncExpr(self, ctx:MATLABParser.FuncExprContext):
+        pass
+
+    # Exit a parse tree produced by MATLABParser#funcExpr.
+    def exitFuncExpr(self, ctx:MATLABParser.FuncExprContext):
         pass
 
 
