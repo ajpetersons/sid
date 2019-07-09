@@ -40,6 +40,8 @@ EQUALS : '=' ;
 
 EQUALTO : '==' ;
 
+NOTEQUALTO : '~=' ;
+
 GT : '>' ;
 
 LT : '<' ;

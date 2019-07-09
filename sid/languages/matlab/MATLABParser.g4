@@ -161,7 +161,7 @@ logicExpr
     ;
 
 compExpr
-    : colonExpr ((NOT|EQUALTO|GT|LT|GE|LE) colonExpr)*
+    : colonExpr ((NOT|EQUALTO|NOTEQUALTO|GT|LT|GE|LE) colonExpr)*
     ;
 
 colonExpr
@@ -191,6 +191,7 @@ transposeExpr
 basicExpr
     : funcExpr
     | dotRef
+    | LPAREN expr RPAREN
     | INT | FLOAT | SCI
     | STRING
     ;
