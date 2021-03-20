@@ -5,7 +5,7 @@ antlr4-python3-runtime==4.7.2
 # ca-certificates==2019.5.15
 # certifi==2019.3.9
 click==7.0
-jinja2==2.10.1
+jinja2==2.11.3
 # libcxx==4.0.1
 # libcxxabi==4.0.1
 # libedit==3.1.20181209
